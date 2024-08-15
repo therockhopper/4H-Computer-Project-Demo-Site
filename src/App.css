@@ -1,52 +1,4 @@
-
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
-
-.viewer {
-  widht: 70vw;
-  height: 40vh;
-  border: 1px solid black;
-}
-
-.model-container {
-  min-height: 40vh;
-}
-
-.stl-viewer {
-  height: 100%;
-  width: 100%;
-}
-
-.model-card {
-  background-color: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  margin: 20px;
-  overflow: hidden;
-  width: 500px; /* Increased width */
-}
-
-.card-header {
-  background-color: #f8f9fa;
-  padding: 15px; /* Increased padding */
-  text-align: center;
-}
-
-.card-body {
-  padding: 20px; /* Increased padding */
-}
-
-.card-footer {
-  background-color: #f8f9fa;
-  padding: 15px; /* Increased padding */
-  text-align: center;
-}
-
+/* General Styles */
 body {
   font-family: Arial, sans-serif;
   margin: 0;
@@ -54,29 +6,150 @@ body {
   background-color: #f4f4f4;
 }
 
-
-header {
-  background-color: #282c34;
-
-  padding: 20px;
-  color: white;
-  text-align: center;
-
+/* Root Container */
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
 }
 
+/* Header Styles */
+
+header {
+  background-color: #4CAF50; /* 4-H green color */
+  padding: 20px;
+  color: white;
+
+  text-align: center;
+}
 
 h1 {
-
   margin: 0;
-
   font-size: 2em;
 }
 
+/* About Section Styles */
+
+.about-section {
+  background-color: white;
+  border-radius: 8px;
+  margin: 20px auto;
+  padding: 20px;
+  max-width: 800px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: left;  /* Ensures text is left-aligned */
+}
+
+.about-section h2 {
+  font-size: 1.8em;
+  margin-bottom: 10px;
+}
+
+.about-section h3 {
+  font-size: 1.4em;
+  margin-top: 20px;
+}
+
+.about-section p, 
+.about-section ul {
+  font-size: 1em;
+  line-height: 1.6;
+  margin: 10px 0;
+}
+
+.about-section ul {
+  padding-left: 20px;
+}
+
+.about-section li {
+  margin-bottom: 10px;
+
+}
+
+
+/* Model Gallery Styles */
 .model-gallery {
   display: flex;
   flex-wrap: wrap;
+
   justify-content: center;
   padding: 20px;
 }
 
+/* Model Card Styles */
+.model-card {
+  background-color: white;
+
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+  margin: 20px;
+  overflow: hidden;
+  width: 500px;
+}
+
+.card-header {
+  background-color: #f8f9fa;
+
+  padding: 15px;
+  text-align: center;
+}
+
+.card-body {
+  padding: 20px;
+}
+
+.card-footer {
+  background-color: #f8f9fa;
+  padding: 15px;
+
+  text-align: center;
+}
+
+/* STL Viewer Styles */
+.viewer {
+  width: 70vw;
+  height: 40vh;
+  border: 1px solid black;
+}
+
+.stl-viewer {
+  height: 100%;
+  width: 100%;
+}
+
+.model-container {
+
+  min-height: 40vh;
+}
+
+/* Refresh Button Styles */
+.refresh-button {
+  position: fixed;
+  bottom: 20px;
+
+  right: 20px;
+  background-color: #4CAF50; /* 4-H green color */
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 15px 20px;
+
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease;
+
+}
+
+
+.refresh-button:hover {
+  background-color: #45a049;
+}
+
+.refresh-button:focus {
+  outline: none;
+}
 

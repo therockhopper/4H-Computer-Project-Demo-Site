@@ -16,7 +16,6 @@ const STLModelViewer = ({ stlPath, title, description }) => {
       <div className="card-body">
 
         <StlViewer
-
           style={style}
           url={stlPath}
           modelcolor="#0055ff"
@@ -29,7 +28,7 @@ const STLModelViewer = ({ stlPath, title, description }) => {
         />
       </div>
       <div className="card-footer">
-        <p>{description}</p>
+        <p>Author: {description}</p>
       </div>
     </div>
   );
