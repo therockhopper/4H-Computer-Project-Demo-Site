@@ -98,6 +98,9 @@ function App() {
           />
         ))}
       </div>
+      <button className="refresh-button" onClick={() => window.location.reload()}>
+        Reset
+      </button>
     </div>
   );
 }
