@@ -1,79 +1,240 @@
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-}
-
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-
-a:hover {
-  color: #535bf2;
-}
-
+/* General Styles */
 body {
+  font-family: Arial, sans-serif;
   margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 320px;
-  min-height: 100vh;
+  padding: 0;
+  background-color: #f4f4f4;
+  color: #333; /* Ensures dark text on light background */
+
 }
+
+
+/* Root Container */
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1rem;
+
+}
+
+
+/* Header Styles */
+header {
+  background-color: #4CAF50; /* 4-H green color */
+  padding: 15px;
+  color: white;
+  text-align: center;
+}
+
 
 h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  margin: 0;
+  font-size: 2em;
+
 }
 
-button {
+
+/* About Section Styles */
+.about-section {
+  background-color: white;
   border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
+  margin: 20px auto;
+  padding: 15px;
+  max-width: 100%;
+
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: left;
+
+  color: #333; /* Ensures dark text on light background */
+}
+
+.about-section h2 {
+  font-size: 1.5em;
+
+  margin-bottom: 10px;
+}
+
+.about-section h3 {
+  font-size: 1.2em;
+
+  margin-top: 15px;
+}
+
+.about-section p, 
+.about-section ul {
   font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
+
+  line-height: 1.6;
+  margin: 10px 0;
+}
+
+.about-section ul {
+  padding-left: 20px;
+}
+
+.about-section li {
+  margin-bottom: 10px;
+}
+
+/* Model Gallery Styles */
+.model-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 15px;
+}
+
+/* Model Card Styles */
+.model-card {
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin: 10px;
+
+  overflow: hidden;
+  width: 100%;
+  max-width: 500px;
+  color: #333; /* Ensures dark text on light background */
+}
+
+
+/* Card Header, Body, and Footer */
+.card-header {
+  background-color: #f8f9fa;
+  padding: 10px;
+  text-align: center;
+}
+
+.card-body {
+  padding: 15px;
+}
+
+
+.card-footer {
+  background-color: #f8f9fa;
+  padding: 10px;
+  text-align: center;
+}
+
+
+/* STL Viewer & Tinkercad Game Styles */
+
+.viewer {
+  width: 100%;
+
+  height: 30vh;
+  border: 1px solid black;
+}
+
+.stl-viewer,
+
+.tinkercad-viewer {
+  height: 100%;
+  width: 100%;
+}
+
+.model-container {
+  min-height: 30vh;
+}
+
+
+/* Refresh Button Styles */
+.refresh-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+
+  border-radius: 50px;
+  padding: 12px 18px;
+  font-size: 1em;
+
+  font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.25s;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease;
 }
 
-button:hover {
-  border-color: #646cff;
+
+.refresh-button:hover {
+  background-color: #45a049;
+
 }
 
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+
+.refresh-button:focus {
+  outline: none;
+
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 1.5em;
   }
 
-  a:hover {
-    color: #747bff;
+  .about-section {
+    padding: 10px;
+    margin: 10px auto;
   }
 
-  button {
-    background-color: #f9f9f9;
+  .about-section h2 {
+    font-size: 1.4em;
+
+  }
+
+  .about-section h3 {
+    font-size: 1.1em;
+  }
+
+  .model-card {
+    margin: 10px;
+    width: 100%;
+  }
+
+  .viewer {
+    height: 25vh;
+  }
+
+
+  .refresh-button {
+    padding: 10px 16px;
+    font-size: 0.9em;
+  }
+}
+
+@media (max-width: 480px) {
+
+  h1 {
+    font-size: 1.2em;
+  }
+
+  .about-section {
+    padding: 8px;
+
+  }
+
+  .about-section h2 {
+    font-size: 1.2em;
+  }
+
+  .about-section h3 {
+    font-size: 1em;
+  }
+
+
+  .viewer {
+    height: 20vh;
+  }
+
+  .refresh-button {
+    padding: 8px 14px;
+    font-size: 0.8em;
+
   }
 }
 
