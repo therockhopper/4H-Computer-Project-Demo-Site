@@ -1,6 +1,82 @@
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
 }
+
+.viewer {
+  widht: 70vw;
+  height: 40vh;
+  border: 1px solid black;
+}
+
+.model-container {
+  min-height: 40vh;
+}
+
+.stl-viewer {
+  height: 100%;
+  width: 100%;
+}
+
+.model-card {
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin: 20px;
+  overflow: hidden;
+  width: 500px; /* Increased width */
+}
+
+.card-header {
+  background-color: #f8f9fa;
+  padding: 15px; /* Increased padding */
+  text-align: center;
+}
+
+.card-body {
+  padding: 20px; /* Increased padding */
+}
+
+.card-footer {
+  background-color: #f8f9fa;
+  padding: 15px; /* Increased padding */
+  text-align: center;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+}
+
+
+header {
+  background-color: #282c34;
+
+  padding: 20px;
+  color: white;
+  text-align: center;
+
+}
+
+
+h1 {
+
+  margin: 0;
+
+  font-size: 2em;
+}
+
+.model-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 20px;
+}
+
+
