@@ -39,11 +39,16 @@ const models = [
     title: 'Spider Hat',
     description: 'Sterling Morrison',
   },
-  // {
-  //   stlPath: '/models/BrodyRobinson/.stl',
-  //   title: 'Brody Robinson',
-  //   description: '',
-  // }
+  {
+    stlPath: '/models/WilliamHershey/FunkyRobo.stl',
+    title: 'Funky Robo',
+    description: 'William Hershey',
+  },
+  {
+    stlPath: '/models/PeterHershey/lamppost.stl',
+    title: 'Lamp Post',
+    description: 'Peter Hershey',
+  },
 ];
 
 const scratchGames = [
