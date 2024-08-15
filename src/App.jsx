@@ -52,7 +52,7 @@ function App() {
   return (
     <div>
       <header>
-        <h1>4H Computer Project - Port Hood Island View 4-H Club</h1>
+        <h1>4H Computer Project - Port Hood Island View</h1>
       </header>
       <section className="about-section">
         <h2>About Our 3D Models</h2>
