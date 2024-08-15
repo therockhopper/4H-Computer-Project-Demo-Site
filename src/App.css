@@ -262,3 +262,68 @@ h1 {
   outline: none;
 }
 
+
+.qr-code-section {
+  text-align: center;
+
+  margin-top: 20px;
+}
+
+.qr-code-image {
+  width: 150px; /* Adjust the size as needed */
+  height: auto;
+}
+
+.qr-code-description {
+  margin-top: 10px;
+  font-size: 24px;
+  margin-bottom: 50px;
+}
+
+.project-description {
+  margin-top: 20px;
+  font-size: 16px;
+
+  text-align: center;
+}
+
+.project-description a {
+  color: #007bff; /* Link color */
+  text-decoration: none;
+}
+
+
+.project-description a:hover {
+  text-decoration: underline;
+}
+
+.description-card {
+
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+
+  padding: 20px;
+  margin: 20px auto;
+  max-width: 800px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.description-card p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+
+.description-card a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.description-card a:hover {
+  text-decoration: underline;
+}
+
+
