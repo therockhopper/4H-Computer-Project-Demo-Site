@@ -1,24 +1,48 @@
-import { useState } from 'react'
-import './App.css'
+import './App.css';
 
 import STLModelViewer from './STLModelViewer';
 
 const models = [
   {
     stlPath: '/models/EmmetMcNabb/Emmett4HProject1.stl',
-    title: 'Emmett McNabb',
-    description: 'Description for Model 1',
+    title: 'Steve',
+    description: 'Emmett McNabb',
   },
   {
     stlPath: '/models/EmmetMcNabb/Emmetts4HProject2.stl',
-    title: 'Emmett McNabb',
-    description: 'Description for Model 2',
+    title: 'Truck',
+    description: 'Emmett McNabb',
   },
   {
     stlPath: '/models/SamuelWatts/SamBoat.stl',
-    title: 'Samuel Watts',
-    description: 'Boat',
+    title: 'Boat',
+    description: 'Samuel Watts',
   },
+  {
+    stlPath: '/models/SamuelWatts/PumpkinSword.stl',
+    title: 'Sword',
+    description: 'Samuel Watts',
+  },
+  {
+    stlPath: '/models/SamuelWatts/dogtag.stl',
+    title: 'Dog Tag',
+    description: 'Samuel Watts',
+  },
+  {
+    stlPath: '/models/MaliaWatts/Skipper.stl',
+    title: 'Skipper',
+    description: 'Malia Watts',
+  },
+  {
+    stlPath: '/models/SterlingMorrison/Spider_Hat.stl',
+    title: 'Sterling Morrison',
+    description: 'Spider Hat',
+  },
+  // {
+  //   stlPath: '/models/BrodyRobinson/.stl',
+  //   title: 'Brody Robinson',
+  //   description: '',
+  // }
 ];
 
 
