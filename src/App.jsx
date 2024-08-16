@@ -55,6 +55,11 @@ const models = [
     title: 'Lamp Post',
     description: 'Peter Hershey',
   },
+  {
+    stlPath: '/models/BrodyRobinson/SurprisingBorwo.stl',
+    title: 'Surprising Borwo',
+    description: 'Brody Robinson',
+  }
 ];
 
 const scratchGames = [
