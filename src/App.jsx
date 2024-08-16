@@ -40,6 +40,12 @@ const models = [
     description: 'Sterling Morrison',
   },
   {
+    stlPath: '/models/SterlingMorrison/rabbit.stl',
+    title: 'Rabbit',
+    description: 'Sterling Morrison',
+  },
+
+  {
     stlPath: '/models/WilliamHershey/FunkyRobo.stl',
     title: 'Funky Robo',
     description: 'William Hershey',
