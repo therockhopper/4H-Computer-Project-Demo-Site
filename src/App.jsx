@@ -68,9 +68,17 @@ const scratchGames = [
     author: 'Peter Hershey',
     url: 'https://scratch.mit.edu/projects/1054639773/embed',
   },
+]
 
+const animations = [
+  {
+    title: 'Cat Makes',
+    author: 'Sterling Morrison',
+    url: "https://www.youtube.com/embed/bA5wyWt2koI?si=ewIJE-goOVZzANCh"
+  }
 
 ]
+
 
 function App() {
   return (
@@ -116,6 +124,32 @@ function App() {
             title={game.title}
             author={game.author}
           />
+        ))}
+      </div>
+
+      {/* Section for Animations */}
+      <h2 className="section-title">Animations</h2>
+      <div className="animation-gallery">
+        {animations.map((animation, index) => (
+          <div key={index} className="model-card">
+            <div className="card-header">
+              <h2>{animation.title}</h2>
+            </div>
+            <div className="card-body">
+              <iframe
+                width="560"
+                height="315"
+                src={animation.url}
+                title={animation.title}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+            <div className="card-footer">
+              <p>By: {animation.author}</p>
+            </div>
+          </div>
         ))}
       </div>
 

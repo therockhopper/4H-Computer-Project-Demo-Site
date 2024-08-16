@@ -82,7 +82,7 @@ h1 {
 }
 
 /* Model Gallery Styles */
-.model-gallery {
+.model-gallery, .animation-gallery {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -91,7 +91,7 @@ h1 {
 }
 
 /* Model Card Styles */
-.model-card {
+.model-card, .animation-card {
   background-color: white;
   border: 1px solid #ddd;
   border-radius: 8px;
