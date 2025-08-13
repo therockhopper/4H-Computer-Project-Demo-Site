@@ -1,63 +1,27 @@
 import { Link } from 'react-router-dom';
+import './Navigation.css';
 
 const Navigation = ({ currentPage }) => {
-  const buttonStyle = {
-    padding: '12px 24px',
-    fontSize: '18px',
-    fontWeight: 'bold',
-    textDecoration: 'none',
-    backgroundColor: '#339966',
-    color: 'white',
-    borderRadius: '8px',
-    display: 'inline-block',
-    border: '2px solid #339966',
-    transition: 'all 0.3s ease',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    marginRight: '15px'
-  };
-
-  const handleMouseOver = (e) => {
-    e.target.style.backgroundColor = 'white';
-    e.target.style.color = '#339966';
-  };
-
-  const handleMouseOut = (e) => {
-    e.target.style.backgroundColor = '#339966';
-    e.target.style.color = 'white';
-  };
-
   return (
-    <nav style={{ margin: '20px 0' }}>
+    <nav className="navigation">
       {currentPage !== 'home' && (
-        <Link
-          to="/"
-          style={buttonStyle}
-          onMouseOver={handleMouseOver}
-          onMouseOut={handleMouseOut}
-        >
-          🏠 Home
+        <Link to="/" className="nav-button">
+          <span className="nav-icon">🏠</span>
+          <span className="nav-text">Home</span>
         </Link>
       )}
       
       {currentPage !== '2024' && (
-        <Link
-          to="/2024"
-          style={buttonStyle}
-          onMouseOver={handleMouseOver}
-          onMouseOut={handleMouseOut}
-        >
-          📅 2024 Projects
+        <Link to="/2024" className="nav-button">
+          <span className="nav-icon">📅</span>
+          <span className="nav-text">2024 Projects</span>
         </Link>
       )}
       
       {currentPage !== '2025' && (
-        <Link
-          to="/2025"
-          style={buttonStyle}
-          onMouseOver={handleMouseOver}
-          onMouseOut={handleMouseOut}
-        >
-          🚀 2025 Projects
+        <Link to="/2025" className="nav-button">
+          <span className="nav-icon">🚀</span>
+          <span className="nav-text">2025 Projects</span>
         </Link>
       )}
     </nav>
