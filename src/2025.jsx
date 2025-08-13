@@ -6,97 +6,36 @@ import Navigation from './Navigation';
 
 const models = [
   {
-    stlPath: '/2024/models/EmmetMcNabb/Emmett4HProject1.stl',
-    title: 'Steve',
-    description: 'Emmett McNabb',
+    stlPath: '',
+    title: '',
+    description: '',
   },
-  {
-    stlPath: '/2024/models/EmmetMcNabb/Emmetts4HProject2.stl',
-    title: 'Truck',
-    description: 'Emmett McNabb',
-  },
-  {
-    stlPath: '/2024/models/SamuelWatts/SamBoat.stl',
-    title: 'Boat',
-    description: 'Samuel Watts',
-  },
-  {
-    stlPath: '/2024/models/SamuelWatts/PumpkinSword.stl',
-    title: 'Sword',
-    description: 'Samuel Watts',
-  },
-  {
-    stlPath: '/2024/models/SamuelWatts/dogtag.stl',
-    title: 'Dog Tag',
-    description: 'Samuel Watts',
-  },
-  {
-    stlPath: '/2024/models/MaliaWatts/Skipper.stl',
-    title: 'Skipper',
-    description: 'Malia Watts',
-  },
-  {
-    stlPath: '/2024/models/SterlingMorrison/Spider_Hat.stl',
-    title: 'Spider Hat',
-    description: 'Sterling Morrison',
-  },
-  {
-    stlPath: '/2024/models/SterlingMorrison/rabbit.stl',
-    title: 'Rabbit',
-    description: 'Sterling Morrison',
-  },
-
-  {
-    stlPath: '/2024/models/WilliamHershey/FunkyRobo.stl',
-    title: 'Funky Robo',
-    description: 'William Hershey',
-  },
-  {
-    stlPath: '/2024/models/PeterHershey/lamppost.stl',
-    title: 'Lamp Post',
-    description: 'Peter Hershey',
-  },
-  {
-    stlPath: '/2024/models/BrodyRobinson/SurprisingBorwo.stl',
-    title: 'Surprising Borwo',
-    description: 'Brody Robinson',
-  }
 ];
 
 const scratchGames = [
   {
-    title: 'Fire Fingers',
-    author: 'William Hershey',
-    url: 'https://scratch.mit.edu/projects/1055559112/embed',
-  },
-  {
-    title: 'Button Clicker',
-    author: 'Peter Hershey',
-    url: 'https://scratch.mit.edu/projects/1054639773/embed',
-  },
+    title: 'The Broken Script: Integrity Boss Fight',
+    author: 'Sterling Morrison',
+    url: 'https://scratch.mit.edu/projects/1162757694',
+  }
 ]
 
 const animations = [
-  {
-    title: 'Cat Makes',
-    author: 'Sterling Morrison',
-    url: "https://www.youtube.com/embed/bA5wyWt2koI?si=ewIJE-goOVZzANCh"
-  }
-
+  // Add your 2025 animations here
 ]
 
 
-function project24() {
+function project25() {
   return (
     <div>
       <header>
-        <h1>4H Computer Project Showcase - 2024</h1>
-        <Navigation currentPage="2024" />
+        <h1>4H Computer Project Showcase - 2025</h1>
+        <Navigation currentPage="2025" />
       </header>
       {/* Description Card Section */}
       <div className="description-card">
         <p>
-          These are the projects created by members of the Port Hood Island View 4H club. The 3D models were designed using
+          These are the projects created by members of the Port Hood Island View 4H club in 2025. The 3D models were designed using
           <a href="https://www.tinkercad.com" target="_blank" rel="noopener noreferrer"> Tinkercad</a>,
 
           <a href="https://www.blender.org" target="_blank" rel="noopener noreferrer"> Blender</a>, or
@@ -175,4 +114,4 @@ function project24() {
   );
 }
 
-export default project24;
+export default project25;
