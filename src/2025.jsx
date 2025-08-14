@@ -19,6 +19,16 @@ const models = [
 
 const scratchGames = [
   {
+    title: 'Pogo Penguin',
+    author: 'Malcolm Beaton',
+    url: 'https://scratch.mit.edu/projects/1163371525/embed',
+  },
+  {
+    title: 'Fly Bat',
+    author: 'Malcolm Beaton',
+    url: 'https://scratch.mit.edu/projects/1123823210/embed',
+  },
+  {
     title: 'Untitled',
     author: 'Samuel Watts',
     url: ' https://scratch.mit.edu/projects/1136390747/embed',
