@@ -6,6 +6,17 @@ import PosterViewer from './PosterViewer';
 
 const models = [
   {
+    stlPath: '/2025/models/EmmettBeach.stl',
+    title: 'Beach',
+    description: 'Emmett McNabb',
+  },
+
+  {
+    stlPath: '/2025/models/EmmettRobot.stl',
+    title: 'Robot',
+    description: 'Emmett McNabb',
+  },
+  {
     stlPath: '/2025/models/SamuelWattsCar.stl',
     title: 'Car',
     description: 'Samuel Watts',
