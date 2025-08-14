@@ -5,13 +5,24 @@ import ScratchGameViewer from './ScratchGameViewer';
 
 const models = [
   {
-    stlPath: '',
-    title: '',
-    description: '',
+    stlPath: '/2025/models/SamuelWattsCar.stl',
+    title: 'Car',
+    description: 'Samuel Watts',
   },
+  {
+    stlPath: '/2025/models/SamuelWattsAirport.stl',
+    title: 'Airport',
+    description: 'Samuel Watts',
+  },
+
 ];
 
 const scratchGames = [
+  {
+    title: 'Untitled',
+    author: 'Samuel Watts',
+    url: ' https://scratch.mit.edu/projects/1136390747/embed',
+  },
   {
     title: 'The Broken Script: Integrity Boss Fight',
     author: 'Sterling Morrison',
