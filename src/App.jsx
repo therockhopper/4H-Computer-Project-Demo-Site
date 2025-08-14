@@ -69,7 +69,7 @@ function HomePage() {
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      <Route path="/" element={<Project25 />} />
       <Route path="/2024" element={<Project24 />} />
       <Route path="/2025" element={<Project25 />} />
     </Routes>

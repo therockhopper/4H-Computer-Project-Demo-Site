@@ -2,7 +2,6 @@ import './App.css';
 
 import STLModelViewer from './STLModelViewer';
 import ScratchGameViewer from './ScratchGameViewer';
-import Navigation from './Navigation';
 
 const models = [
   {
@@ -16,7 +15,7 @@ const scratchGames = [
   {
     title: 'The Broken Script: Integrity Boss Fight',
     author: 'Sterling Morrison',
-    url: 'https://scratch.mit.edu/projects/1162757694',
+    url: 'https://scratch.mit.edu/projects/1162757694/embed',
   }
 ]
 
@@ -30,7 +29,6 @@ function project25() {
     <div>
       <header>
         <h1>4H Computer Project Showcase - 2025</h1>
-        <Navigation currentPage="2025" />
       </header>
       {/* Description Card Section */}
       <div className="description-card">
