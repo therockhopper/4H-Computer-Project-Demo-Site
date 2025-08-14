@@ -2,6 +2,7 @@ import './App.css';
 
 import STLModelViewer from './STLModelViewer';
 import ScratchGameViewer from './ScratchGameViewer';
+import PosterViewer from './PosterViewer';
 
 const models = [
   {
@@ -42,6 +43,15 @@ const scratchGames = [
 
 const animations = [
   // Add your 2025 animations here
+]
+
+const posters = [
+  {
+    title: 'Digital Art Poster',
+    author: 'Sample Student',
+    url: '/2025/images/MalcomFLYBATPOSTER.gif',
+    type: 'gif'
+  }
 ]
 
 
@@ -93,28 +103,46 @@ function project25() {
       </div>
 
       {/* Section for Animations */}
-      <h2 className="section-title">Animations</h2>
-      <div className="animation-gallery">
-        {animations.map((animation, index) => (
-          <div key={index} className="model-card">
-            <div className="card-header">
-              <h2>{animation.title}</h2>
-            </div>
-            <div className="card-body">
-              <iframe
-                width="560"
-                height="315"
-                src={animation.url}
-                title={animation.title}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
-            </div>
-            <div className="card-footer">
-              <p>By: {animation.author}</p>
-            </div>
+      {animations.length > 0 && (
+        <>
+          <h2 className="section-title">Animations</h2>
+          <div className="animation-gallery">
+            {animations.map((animation, index) => (
+              <div key={index} className="model-card">
+                <div className="card-header">
+                  <h2>{animation.title}</h2>
+                </div>
+                <div className="card-body">
+                  <iframe
+                    width="560"
+                    height="315"
+                    src={animation.url}
+                    title={animation.title}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                </div>
+                <div className="card-footer">
+                  <p>By: {animation.author}</p>
+                </div>
+              </div>
+            ))}
           </div>
+        </>
+      )}
+
+      {/* Section for Posters */}
+      <h2 className="section-title">Posters</h2>
+      <div className="poster-gallery">
+        {posters.map((poster, index) => (
+          <PosterViewer
+            key={index}
+            url={poster.url}
+            title={poster.title}
+            author={poster.author}
+            type={poster.type}
+          />
         ))}
       </div>
 

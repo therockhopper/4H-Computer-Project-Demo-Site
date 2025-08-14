@@ -109,6 +109,18 @@ h1 {
   margin-right: auto;
 }
 
+/* Poster Gallery Styles */
+.poster-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 2.5rem;
+  padding: 2rem 1rem;
+  margin-bottom: 4rem;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 /* Model Card Styles */
 .model-card, .animation-card {
   background: rgba(255, 255, 255, 0.95);
@@ -125,6 +137,44 @@ h1 {
 .model-card:hover, .animation-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 20px 40px rgba(51, 153, 102, 0.2);
+}
+
+/* Poster Card Styles */
+.poster-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  color: #333;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.poster-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 25px 50px rgba(51, 153, 102, 0.25);
+}
+
+/* Poster Body Styles */
+.poster-body {
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f8f9fa;
+}
+
+.poster-media {
+  width: 100%;
+  height: auto;
+  max-height: 800px;
+  object-fit: contain;
+  display: block;
+  aspect-ratio: 2/3;
 }
 
 /* Card Header, Body, and Footer */
@@ -247,6 +297,12 @@ h1 {
     padding: 1rem;
   }
 
+  .poster-gallery {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 1rem;
+  }
+
   .description-card {
     padding: 1.5rem;
     margin: 1.5rem;
@@ -276,6 +332,11 @@ h1 {
   
   .model-gallery, .animation-gallery {
     gap: 1rem;
+    padding: 0.5rem;
+  }
+
+  .poster-gallery {
+    gap: 1.5rem;
     padding: 0.5rem;
   }
   
