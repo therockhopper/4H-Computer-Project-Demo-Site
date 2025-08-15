@@ -6,11 +6,20 @@ import PosterViewer from './PosterViewer';
 
 const models = [
   {
+    stlPath: '/2025/models/PeterHersheyDragon.stl',
+    title: 'Robot',
+    description: 'Peter Hershey',
+  },
+  {
+    stlPath: '/2025/models/WilliamRobot.stl',
+    title: 'Robot',
+    description: 'William Hershey',
+  },
+  {
     stlPath: '/2025/models/EmmettBeach.stl',
     title: 'Pool Party',
     description: 'Emmett McNabb',
   },
-
   {
     stlPath: '/2025/models/EmmettRobot.stl',
     title: 'The Big Bad wolf',
@@ -58,11 +67,24 @@ const animations = [
 
 const posters = [
   {
+    title: 'Mural',
+    author: 'Peter Hershey',
+    url: '/2025/images/PeterHersheyMural.png',
+    type: 'png'
+  },
+  {
+    title: 'Hit Your Stride In 2025',
+    author: 'Peter Hershey',
+    url: '/2025/images/PeterHersheyHitYourStridein2025.png',
+    type: 'png'
+  },
+  {
     title: 'Digital Art Poster',
-    author: 'Sample Student',
+    author: 'Malcom Beaton',
     url: '/2025/images/MalcomFLYBATPOSTER.gif',
     type: 'gif'
   }
+
 ]
 
 
