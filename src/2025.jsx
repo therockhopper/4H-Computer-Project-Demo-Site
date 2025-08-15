@@ -67,7 +67,12 @@ const scratchGames = [
 ]
 
 const animations = [
-  // Add your 2025 animations here
+  {
+    title: 'Integrity has some words',
+    author: 'Sterling Morrison',
+    url: 'https://scratch.mit.edu/projects/1203688071/embed',
+  }
+
 ]
 
 const posters = [
