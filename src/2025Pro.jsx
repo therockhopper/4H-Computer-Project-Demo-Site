@@ -1,46 +1,45 @@
 import './App.css';
-import { Routes, Route } from 'react-router-dom';
 
 import STLModelViewer from './STLModelViewer';
 import ScratchGameViewer from './ScratchGameViewer';
-import Project24 from './2024';
-import Project25 from './2025';
-import Project25Pro from './2025Pro';
-import Navigation from './Navigation';
 
 const models = [
   {
-    stlPath: '/2024/models/PeterHershey/lamppost.stl',
-    title: 'Lamp Post',
-    description: 'Peter Hershey',
+    stlPath: '/2025/models/EmmettRobot.stl',
+    title: 'The Big Bad wolf',
+    description: 'Emmett McNabb',
   },
 ];
 
-function HomePage() {
+const scratchGames = [
+  {
+    title: 'Fly Bat',
+    author: 'Malcolm Beaton',
+    url: 'https://scratch.mit.edu/projects/1123823210/embed',
+  },
+]
+
+function Project25Pro() {
   return (
     <div>
       <header>
-        <h1>4H Computer Project Showcase</h1>
-        <Navigation currentPage="home" />
+        <h1>Inverness Country Computer Project Showcase</h1>
       </header>
-      {/* Description Card Section */}
       <div className="description-card">
         <p>
-          Welcome to the Port Hood Island View 4H club project showcase! 
-          Click the links above to view projects from different years.
-        </p>
-        <p>
-          These are the projects created by members of our club. The 3D models were designed using
+          These are the projects created by members of the Port Hood Island View 4H club in 2025. The 3D models were designed using
           <a href="https://www.tinkercad.com" target="_blank" rel="noopener noreferrer"> Tinkercad</a>,
           <a href="https://www.blender.org" target="_blank" rel="noopener noreferrer"> Blender</a>, or
           <a href="https://www.autodesk.com/products/fusion-360" target="_blank" rel="noopener noreferrer"> Fusion360</a>.
           The games were created using
           <a href="https://scratch.mit.edu" target="_blank" rel="noopener noreferrer"> Scratch</a>.
+
         </p>
       </div>
 
+
       {/* Section for CAD Models */}
-      <h2 className="section-title">Featured Model</h2>
+      <h2 className="section-title">CAD Models</h2>
       <div className="model-gallery">
         {models.map((model, index) => (
           <STLModelViewer
@@ -48,6 +47,19 @@ function HomePage() {
             stlPath={model.stlPath}
             title={model.title}
             description={model.description}
+          />
+        ))}
+      </div>
+
+      {/* Section for Scratch Games */}
+      <h2 className="section-title">Scratch Games</h2>
+      <div className="model-gallery">
+        {scratchGames.map((game, index) => (
+          <ScratchGameViewer
+            key={index}
+            url={game.url}
+            title={game.title}
+            author={game.author}
           />
         ))}
       </div>
@@ -67,15 +79,4 @@ function HomePage() {
   );
 }
 
-function App() {
-  return (
-    <Routes>
-  <Route path="/" element={<Project25Pro />} />
-      <Route path="/2024" element={<Project24 />} />
-  <Route path="/2025" element={<Project25Pro />} />
-  <Route path="/2025basic" element={<Project25 />} />
-    </Routes>
-  );
-}
-
-export default App
+export default Project25Pro;
