@@ -20,22 +20,21 @@ const scratchGames = [
   },
 ]
 
-function Project25Pro() {
+function Project26() {
   return (
     <div>
       <header>
-        <h1>Inverness Country Computer Project Showcase - 2025</h1>
-        <Navigation currentPage="2025" />
+        <h1>Inverness Country Computer Project Showcase - 2026</h1>
+        <Navigation currentPage="2026" />
       </header>
       <div className="description-card">
         <p>
-          These are the projects created by members of the Port Hood Island View 4H club in 2025. The 3D models were designed using
+          These are the projects created by members of the Port Hood Island View 4H club in 2026. The 3D models were designed using
           <a href="https://www.tinkercad.com" target="_blank" rel="noopener noreferrer"> Tinkercad</a>,
           <a href="https://www.blender.org" target="_blank" rel="noopener noreferrer"> Blender</a>, or
           <a href="https://www.autodesk.com/products/fusion-360" target="_blank" rel="noopener noreferrer"> Fusion360</a>.
           The games were created using
           <a href="https://scratch.mit.edu" target="_blank" rel="noopener noreferrer"> Scratch</a>.
-
         </p>
       </div>
 
@@ -81,4 +80,4 @@ function Project25Pro() {
   );
 }
 
-export default Project25Pro;
+export default Project26;
