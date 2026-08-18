@@ -6,15 +6,15 @@ const ScratchGameViewer = ({ url, title, author }) => {
       <div className="card-header">
         <h2>{title}</h2>
       </div>
-      <div className="card-body">
-        <iframe
-          src={url}
-          allowtransparency="true"
-          width="485"
-          height="402"
-          allowFullScreen
-          title={title}
-        ></iframe>
+      <div className="card-body" style={{ padding: 0 }}>
+        <div className="scratch-wrapper">
+          <iframe
+            src={url}
+            allowtransparency="true"
+            allowFullScreen
+            title={title}
+          ></iframe>
+        </div>
       </div>
       <div className="card-footer">
         <p>Author: {author}</p>

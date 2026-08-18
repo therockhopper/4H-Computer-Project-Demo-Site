@@ -3,7 +3,7 @@ import { StlViewer } from 'react-stl-viewer';
 
 const style = {
   width: '100%',
-  height: '400px', // Increased height
+  height: '100%',
 };
 
 
@@ -13,8 +13,7 @@ const STLModelViewer = ({ stlPath, title, description }) => {
       <div className="card-header">
         <h2>{title}</h2>
       </div>
-      <div className="card-body">
-
+      <div className="card-body stl-viewer-body">
         <StlViewer
           style={style}
           url={stlPath}
