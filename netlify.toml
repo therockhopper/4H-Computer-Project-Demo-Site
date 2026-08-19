@@ -1,0 +1,8 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Pin explicitly rather than inheriting whatever default the site was
+  # created with — Vite 5 and vite-plugin-pwa both need Node 18+.
+  NODE_VERSION = "20"

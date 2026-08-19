@@ -1,0 +1,3 @@
+# SPA fallback — every route is served by index.html and resolved client-side
+# by React Router. Without this, deep links like /2025 return Netlify's 404.
+/*  /index.html  200
