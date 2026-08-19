@@ -1,29 +1,25 @@
 import { Link } from 'react-router-dom';
 import './Navigation.css';
 
+/**
+ * Links to the other years' showcases. Add a year here when its page exists;
+ * the current page's own entry is filtered out, and the nav disappears entirely
+ * while there is only one year, rather than rendering an empty bar.
+ */
+const YEARS = [{ id: '2026', label: '2026 Projects', icon: '⭐', path: '/2026' }];
+
 const Navigation = ({ currentPage }) => {
+  const others = YEARS.filter((y) => y.id !== currentPage);
+  if (others.length === 0) return null;
+
   return (
     <nav className="navigation">
-      {currentPage !== '2024' && (
-        <Link to="/2024" className="nav-button">
-          <span className="nav-icon">📅</span>
-          <span className="nav-text">2024 Projects</span>
+      {others.map((year) => (
+        <Link key={year.id} to={year.path} className="nav-button">
+          <span className="nav-icon">{year.icon}</span>
+          <span className="nav-text">{year.label}</span>
         </Link>
-      )}
-
-      {currentPage !== '2025' && (
-        <Link to="/2025" className="nav-button">
-          <span className="nav-icon">🚀</span>
-          <span className="nav-text">2025 Projects</span>
-        </Link>
-      )}
-
-      {currentPage !== '2026' && (
-        <Link to="/2026" className="nav-button">
-          <span className="nav-icon">⭐</span>
-          <span className="nav-text">2026 Projects</span>
-        </Link>
-      )}
+      ))}
     </nav>
   );
 };

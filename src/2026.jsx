@@ -6,7 +6,7 @@ import Navigation from './Navigation';
 
 const models = [
   {
-    stlPath: '/2025/models/EmmettRobot.stl',
+    stlPath: '/2026/models/EmmettRobot.stl',
     title: 'The Big Bad Wolf',
     description: 'Emmett McNabb',
   },
@@ -16,7 +16,8 @@ const scratchGames = [
   {
     title: 'Fly Bat',
     author: 'Malcolm Beaton',
-    url: 'https://scratch.mit.edu/projects/1123823210/embed',
+    localPath: '/games/fly-bat.html',
+    url: 'https://scratch.mit.edu/projects/1123823210',
   },
 ];
 
@@ -67,6 +68,7 @@ function Project26() {
           {scratchGames.map((game, index) => (
             <ScratchGameViewer
               key={index}
+              localPath={game.localPath}
               url={game.url}
               title={game.title}
               author={game.author}

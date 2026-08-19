@@ -1,43 +1,104 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Working with AI agents on this repository.
+
+## Project Overview
+
+**4H Computer Project Demo Site** — a React + Vite web application showcasing 4H computer projects. Uses React Router for navigation, Vite for build tooling, and ESLint for code quality.
+
+### Tech Stack
+- **Frontend**: React 18, React Router 7
+- **Build**: Vite 5
+- **Dev Tools**: ESLint 9, Node modules
+- **Extras**: react-stl-viewer for 3D model display
+
+### Project Structure
+```
+src/
+├── components/        # Reusable UI components
+├── pages/            # Page-level components (route targets)
+├── App.jsx           # Main app + routing
+├── main.jsx          # Entry point
+└── index.css         # Global styles
+public/              # Static assets
+```
+
+## Agent Ground Rules
+
+### ✅ DO
+
+- **Test locally first**: Run `npm run dev` and verify changes in the browser before reporting completion.
+- **Read before edit**: Always read a file before making changes; don't assume structure.
+- **Follow existing patterns**: Match the code style, naming conventions, and component structure already in place.
+- **Prefer small PRs**: Make focused, atomic commits. One feature or fix per commit.
+- **Keep components simple**: Avoid over-engineering. A component's job should be obvious from its name and JSX.
+- **Use descriptive names**: Component and variable names should be self-documenting.
+- **Test the golden path**: For UI changes, verify the happy path works before saying done.
+
+### ❌ DON'T
+
+- **Don't refactor unprompted**: Focus on the requested change. Leave working code alone.
+- **Don't add unnecessary abstractions**: Three similar lines of code do not automatically need a shared helper.
+- **Don't mock away reality**: Avoid mocking when real components/routes would verify the fix.
+- **Don't commit without testing**: Always verify UI changes work in the browser.
+- **Don't ignore build warnings**: Fix ESLint errors before committing.
+- **Don't leave console errors**: Clean up any `console.error` or `console.warn` from development.
 
 ## Commands
 
-- `npm run dev` — start the Vite dev server
-- `npm run build` — production build
-- `npm run preview` — preview the production build
-- `npm run lint` — run ESLint (`eslint .`)
+```bash
+npm run dev      # Start dev server (http://localhost:5173)
+npm run build    # Production build
+npm run lint     # Run ESLint
+npm run preview  # Preview production build locally
+```
 
-There is no test suite or test runner configured in this repo.
+## Key Files to Know
 
-## Architecture
+- **src/App.jsx** — routing and main layout
+- **src/main.jsx** — React root and mounting
+- **src/index.css** — global styles
+- **vite.config.js** — build config (usually doesn't need changes)
+- **eslint.config.js** — lint rules
 
-This is a static React + Vite single-page app (no backend, no env vars) that showcases 4H club members' yearly computer projects (3D-printed/CAD models, Scratch games, animations, posters).
+## Common Tasks
 
-**Entry chain**: `index.html` → `src/main.jsx` (mounts `<App>` in `StrictMode`/`BrowserRouter`, and registers a `/sw.js` service worker — note there is no `sw.js` file anywhere in `public/`, so this registration currently 404s silently) → `src/App.jsx`.
+### Adding a New Page
+1. Create `src/pages/YourPage.jsx`
+2. Add a route in `src/App.jsx`
+3. Test navigation works
+4. Verify page renders
 
-**Routing** (`src/App.jsx`) is the source of truth for which yearly page is "live":
-- `/` and `/2025` → `Project25Pro` (`src/2025Pro.jsx`) — the current showcase page
-- `/2025basic` → `Project25` (`src/2025.jsx`) — an older/fuller 2025 page kept around but not linked from nav
-- `/2024` → `Project24` (`src/2024.jsx`)
+### Adding a Component
+1. Create `src/components/YourComponent.jsx`
+2. Export as default
+3. Use consistent prop names and JSDoc comments if complex
+4. Test in context before committing
 
-**Year-page pattern**: each of `2024.jsx`, `2025.jsx`, `2025Pro.jsx` is a self-contained page component with hardcoded local arrays (`models`, `scratchGames`, `animations`, `posters`), each mapped into a gallery `<div>` using the shared viewer components below. To add a new project, add an entry to the relevant array in the page file and drop the asset under `public/<year>/...`.
+### Fixing a Bug
+1. Reproduce locally with `npm run dev`
+2. Identify root cause
+3. Fix and verify with a browser refresh
+4. Check for related regressions
 
-**Shared viewer components** (flat in `src/`, no `components/` subdirectory):
-- `STLModelViewer.jsx` — renders a `.stl` CAD file via `react-stl-viewer`'s `StlViewer`
-- `ScratchGameViewer.jsx` — iframes a Scratch project embed URL
-- `PosterViewer.jsx` — renders an image or video poster based on a `type` prop (`png`/`gif` vs `mp4`/`video`)
-- `Navigation.jsx` — nav bar of `Link`s; takes a `currentPage` prop to hide the link back to the current page (used on the home and 2024 pages, but omitted from `2025.jsx`/`2025Pro.jsx`)
+## Branching & Commits
 
-**Asset convention**: `public/<year>/models/<AuthorName>/*.stl` and `public/<year>/images/<file>` — assets are organized per year, per author. Site-wide assets (`public/qr.png`, `public/images/favicon.ico`) sit outside the year folders.
+- Branch from `main` for new work
+- Use semantic commit messages: `feat:`, `fix:`, `refactor:`, `chore:`
+- One logical change per commit
+- Test before committing
 
-Styling is plain CSS per file (`App.css`, `index.css`, `Navigation.css`) — no CSS framework or preprocessor.
+## When to Ask for Help
 
-## Workflow
+- Unclear requirements or ambiguous UI behavior
+- Large architectural changes
+- Performance concerns
+- Browser compatibility issues
+- Deployment or build setup
 
-All work must be done on a **feature branch**. Create a branch from `main` for your task, make your changes, then open a pull request (PR) for review and merge. Do not commit directly to `main`.
+## Notes
 
-## Deployment
-
-This project is deployed via **Netlify**. Merges to `main` automatically trigger a Netlify deployment to production.
+- This is a lightweight project; keep it that way.
+- No backend integration required unless explicitly requested.
+- Focus on clean, readable code over clever optimizations.
+- Component reuse is good; premature abstraction is not.

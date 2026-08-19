@@ -1,0 +1,24 @@
+# A cached sw.js strands users on an old worker with no recovery path.
+/sw.js
+  Cache-Control: no-cache
+  Service-Worker-Allowed: /
+
+/index.html
+  Cache-Control: no-cache
+
+/manifest.webmanifest
+  Cache-Control: no-cache
+  Content-Type: application/manifest+json
+
+/offline-manifest.json
+  Cache-Control: no-cache
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Safe only because these are requested with ?v=<contenthash>.
+/2026/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/games/*
+  Cache-Control: public, max-age=3600
