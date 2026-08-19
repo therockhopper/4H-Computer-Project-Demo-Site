@@ -20,20 +20,20 @@ const scratchGames = [
   },
 ];
 
-function Project25Pro() {
+function Project26() {
   return (
     <div>
       <header>
-        <div className="year-badge">Port Hood Island View · 2025</div>
+        <div className="year-badge">Port Hood Island View · 2026</div>
         <h1>4H Computer Project <em>Showcase</em></h1>
         <p className="header-sub">Celebrating the creativity and technical skills of our 4&#8209;H club members.</p>
-        <Navigation currentPage="2025" />
+        <Navigation currentPage="2026" />
       </header>
 
       <div className="page-wrap">
         <div className="description-card">
           <p>
-            Projects created by members of the Port Hood Island View 4H club in 2025. 3D models designed using
+            Projects created by members of the Port Hood Island View 4H club in 2026. 3D models designed using
             {' '}<a href="https://www.tinkercad.com" target="_blank" rel="noopener noreferrer">Tinkercad</a>,
             {' '}<a href="https://www.blender.org" target="_blank" rel="noopener noreferrer">Blender</a>, or
             {' '}<a href="https://www.autodesk.com/products/fusion-360" target="_blank" rel="noopener noreferrer">Fusion360</a>.
@@ -89,4 +89,4 @@ function Project25Pro() {
   );
 }
 
-export default Project25Pro;
+export default Project26;

@@ -6,6 +6,7 @@ import ScratchGameViewer from './ScratchGameViewer';
 import Project24 from './2024';
 import Project25 from './2025';
 import Project25Pro from './2025Pro';
+import Project26 from './2026';
 import Navigation from './Navigation';
 
 const models = [
@@ -70,10 +71,11 @@ function HomePage() {
 function App() {
   return (
     <Routes>
-  <Route path="/" element={<Project25Pro />} />
+      <Route path="/" element={<Project26 />} />
       <Route path="/2024" element={<Project24 />} />
-  <Route path="/2025" element={<Project25Pro />} />
-  <Route path="/2025basic" element={<Project25 />} />
+      <Route path="/2025" element={<Project25Pro />} />
+      <Route path="/2025basic" element={<Project25 />} />
+      <Route path="/2026" element={<Project26 />} />
     </Routes>
   );
 }
