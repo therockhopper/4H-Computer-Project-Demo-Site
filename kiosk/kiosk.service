@@ -1,0 +1,56 @@
+# 4H Showcase display kiosk.
+#
+# Install to /etc/systemd/system/kiosk.service, then:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable kiosk.service
+#
+# Check the Chromium binary name first — some Bookworm images ship it as
+# `chromium` rather than `chromium-browser`:
+#   command -v chromium-browser chromium
+#
+# XDG_RUNTIME_DIR below assumes the kiosk user is uid 1001. Confirm with `id -u kiosk`
+# and adjust if it differs.
+
+[Unit]
+Description=4H Showcase Kiosk
+After=systemd-user-sessions.service nginx.service
+Wants=nginx.service
+
+[Service]
+User=kiosk
+# PAMName=login makes logind grant this service a seat, without which cage cannot
+# open the DRM device and exits immediately.
+PAMName=login
+TTYPath=/dev/tty1
+StandardInput=tty-fail
+StandardOutput=journal
+StandardError=journal
+UtmpIdentifier=tty1
+Environment=XDG_RUNTIME_DIR=/run/user/1001
+
+# Wipe the browser profile each boot. Three jobs: clears whatever state a visitor
+# left, discards the "Chrome didn't shut down correctly — Restore?" bar that would
+# otherwise appear on the display every time the kiosk is unplugged rather than shut
+# down cleanly, and drops any service worker registered by an earlier build.
+ExecStartPre=/bin/rm -rf /home/kiosk/.chromium-kiosk
+
+ExecStart=/usr/bin/cage -d -- /usr/bin/chromium-browser \
+    --ozone-platform=wayland \
+    --kiosk \
+    --user-data-dir=/home/kiosk/.chromium-kiosk \
+    --noerrdialogs \
+    --disable-infobars \
+    --disable-session-crashed-bubble \
+    --disable-features=Translate,TranslateUI,AutofillServerCommunication,OptimizationHints \
+    --check-for-update-interval=31536000 \
+    --autoplay-policy=no-user-gesture-required \
+    --overscroll-history-navigation=0 \
+    --disable-pinch \
+    --password-store=basic \
+    'http://localhost/?kiosk=1'
+
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=graphical.target
