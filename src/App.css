@@ -684,3 +684,32 @@ h1 em {
     width: 48px;
   }
 }
+
+/* ──────────────────────────────────────
+   Kiosk mode
+   Applied by src/kiosk.js when the page is loaded with ?kiosk=1 on the
+   Raspberry Pi display. Mouse only, no keyboard, no way out of the page.
+   ────────────────────────────────────── */
+
+/* Dragging a text selection across a touchscreen or with a mouse looks broken on
+   a display nobody can type into, and a long-press callout has nowhere to go. */
+.kiosk body {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* External links are already blocked from navigating in kiosk.js. These rules drop
+   the affordance so nothing looks clickable that isn't, while keeping the creator
+   attribution and the tool credits readable. */
+.kiosk .description-card a,
+.kiosk .card-link {
+  pointer-events: none;
+  color: inherit;
+  text-decoration: none;
+  font-weight: inherit;
+}
+
+.kiosk .card-link {
+  color: var(--text-label);
+}
