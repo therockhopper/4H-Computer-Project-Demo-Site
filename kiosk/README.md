@@ -15,7 +15,8 @@ plus a ~200 MB `node_modules` tree on the Pi, and has no restart semantics if it
 dies — you get a blank screen. It is also documented as not for production use.
 
 nginx serves the same built files at ~5 MB RAM, is managed by systemd, and starts at
-boot. Build on your laptop, ship `dist/`, and the Pi never needs a toolchain.
+boot. Note this is about what *serves* the site, not about where you build it — you can
+still build on the Pi (step 3), you just build once rather than on every request.
 
 ---
 
@@ -38,44 +39,91 @@ never implemented. With no keyboard attached the escape surface is close to nil.
 
 ## First-time setup
 
-### 1. Packages and user
+Do all of this over SSH or with a keyboard temporarily attached, while the Pi still
+has a network. Step 6 is what takes it offline for good.
+
+### 1. Get the repo onto the Pi
+
+You need it at least once for the config files in `kiosk/`. A shallow clone skips the
+~86 MB of deleted-model history and lands at about 12 MB:
 
 ```bash
-sudo apt update
-sudo apt install --no-install-recommends cage chromium-browser nginx
+sudo apt update && sudo apt install -y git
+git clone --depth 1 https://github.com/therockhopper/4H-Computer-Project-Demo-Site.git ~/4h
+cd ~/4h
+ls kiosk/          # must list this README, kiosk.service, nginx-4h.conf
+```
+
+That `ls` is the check that matters: a plain clone gets the default branch, so if the
+kiosk work has not been merged to `main` yet, add `--branch feat/offline-support` to
+the clone and re-run it.
+
+### 2. Packages and user
+
+```bash
+sudo apt install --no-install-recommends -y cage chromium-browser nginx
 
 sudo useradd -m -G video,input,render,tty kiosk
 id -u kiosk        # note the uid — kiosk.service assumes 1001
 ```
 
-### 2. Stop the desktop competing for the display
+### 3. Build the site
+
+Two ways. **Building on the Pi** keeps everything self-contained — you can update the
+kiosk with nothing but the Pi itself, which is the better default for a machine that
+lives in a cupboard between shows. A Pi 4 or 5 builds this in about a minute.
+
+Raspberry Pi OS Bookworm ships Node 18, which Vite 5 accepts, but the project targets
+Node 20 (see `netlify.toml`), so install that:
 
 ```bash
-sudo systemctl set-default multi-user.target
-sudo systemctl disable lightdm 2>/dev/null || true
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+node -v                      # expect v20.x
+
+cd ~/4h
+npm ci
+npm run build                # writes dist/
 ```
 
-### 3. Serve the site
+The alternative is **building on your laptop and shipping only `dist/`** — the Pi then
+needs no Node and no `node_modules` (~200 MB saved). Skip the block above and see
+"Pushing a content update" below for the `rsync` command; you still need the clone from
+step 1 for the config files, or you can `scp` just the `kiosk/` directory across.
+
+### 4. Deploy it and start nginx
 
 ```bash
 sudo mkdir -p /var/www/4h
-sudo chown -R "$USER":www-data /var/www/4h
+sudo rsync -a --delete ~/4h/dist/ /var/www/4h/
+sudo chown -R root:www-data /var/www/4h
+sudo find /var/www/4h -type d -exec chmod 755 {} + -o -type f -exec chmod 644 {} +
 
-sudo cp kiosk/nginx-4h.conf /etc/nginx/sites-available/4h
+sudo cp ~/4h/kiosk/nginx-4h.conf /etc/nginx/sites-available/4h
 sudo ln -sf /etc/nginx/sites-available/4h /etc/nginx/sites-enabled/4h
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl enable --now nginx
 ```
 
-### 4. Install the kiosk service
+Confirm before going further — this must return `200` and real HTML, not a 403:
 
 ```bash
-sudo cp kiosk/kiosk.service /etc/systemd/system/kiosk.service
+curl -sI http://localhost/ | head -1
+curl -s http://localhost/2026 | head -c 120
+```
+
+### 5. Stop the desktop competing for the display, install the kiosk service
+
+```bash
+sudo systemctl set-default multi-user.target
+sudo systemctl disable lightdm 2>/dev/null || true
+
+sudo cp ~/4h/kiosk/kiosk.service /etc/systemd/system/kiosk.service
 sudo systemctl daemon-reload
 sudo systemctl enable kiosk.service
 ```
 
-### 5. Take the Pi off the network
+### 6. Take the Pi off the network
 
 The requirement is never-connected, so make it structural rather than a setting
 someone can flip:
@@ -87,25 +135,45 @@ sudo systemctl disable --now wpa_supplicant bluetooth
 
 Re-enable only when pushing a content update (see below).
 
-### 6. Stop the display blanking
+### 7. Stop the display blanking
 
 Append `consoleblank=0` to the single line in `/boot/firmware/cmdline.txt`. The page
 also holds a `navigator.wakeLock`; this is the belt-and-braces companion.
+
+Then `sudo reboot` and work through the verification list below.
 
 ---
 
 ## Pushing a content update
 
-From the repo on your laptop, with the Pi temporarily on the network:
+Whichever way you build, the Pi needs a network for the duration — re-enable it with
+`sudo rfkill unblock wifi`, and block it again when you are done.
+
+**If you build on the Pi:**
+
+```bash
+cd ~/4h
+git pull
+npm ci                       # only when dependencies changed
+npm run build
+sudo rsync -a --delete dist/ /var/www/4h/
+sudo systemctl restart kiosk
+```
+
+**If you build on your laptop**, from the repo there:
 
 ```bash
 npm run build
-rsync -av --delete dist/ kiosk@4h-kiosk.local:/var/www/4h/
-ssh kiosk@4h-kiosk.local sudo systemctl restart kiosk
+rsync -av --delete dist/ pi@4h-kiosk.local:/tmp/4h-dist/
+ssh pi@4h-kiosk.local 'sudo rsync -a --delete /tmp/4h-dist/ /var/www/4h/ && sudo systemctl restart kiosk'
 ```
 
-If the overlay filesystem is enabled (below), turn it off, reboot, update, turn it
-back on, reboot.
+The staging hop through `/tmp` is there because `/var/www/4h` is root-owned — rsyncing
+straight into it over SSH would need root login enabled, which is worse.
+
+If the overlay filesystem is enabled (below), turn it off and reboot before updating,
+then turn it back on and reboot after. Otherwise your changes live in RAM and vanish
+at the next power cut.
 
 ---
 
