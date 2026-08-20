@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useAssetUrl, formatBytes } from './offline/assets';
+import { isKiosk } from './kiosk';
 
 // three.js + the viewer are ~1MB. Split them out so the shell stays small and
 // the chunk is only fetched once a model is actually about to render.
@@ -33,8 +34,10 @@ const STLModelViewer = ({ stlPath, title, description }) => {
     return () => observer.disconnect();
   }, []);
 
+  // The size gate protects visitors on event WiFi. The kiosk serves from local disk,
+  // where it would only hide the exhibit behind a tap nobody makes.
   const small = bytes !== null && bytes < AUTOLOAD_LIMIT;
-  const show = near && (forced || cached || small);
+  const show = near && (forced || cached || small || isKiosk);
 
   return (
     <div className="model-card" ref={cardRef}>

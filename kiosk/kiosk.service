@@ -1,0 +1,73 @@
+# 4H Showcase display kiosk.
+#
+# Install to /etc/systemd/system/kiosk.service, then:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable kiosk.service
+#
+# Check the Chromium binary name first — some Bookworm images ship it as
+# `chromium` rather than `chromium-browser`:
+#   command -v chromium-browser chromium
+#
+# XDG_RUNTIME_DIR below assumes the kiosk user is uid 1001. Step 5 of kiosk/README.md
+# rewrites it with sed to whatever `id -u kiosk` actually reports — if you install this
+# unit by hand instead, make that substitution yourself.
+#
+# This unit needs no getty autologin. See "No autologin is needed" in kiosk/README.md.
+
+[Unit]
+Description=4H Showcase Kiosk
+After=systemd-user-sessions.service nginx.service
+Wants=nginx.service
+
+# getty owns tty1 by default. This service claims the same VT with
+# StandardInput=tty-fail, which fails outright rather than waiting if the TTY is
+# busy — so the getty has to be stopped for the kiosk, not merely ordered after it.
+Conflicts=getty@tty1.service
+After=getty@tty1.service
+
+[Service]
+User=kiosk
+# PAMName=login runs the service through the PAM login stack, so pam_systemd
+# registers a real logind session on a seat. That seat is what grants access to
+# /dev/dri and /dev/input; without it cage cannot open the DRM device and exits
+# immediately. It is also why this kiosk needs no getty autologin — the service
+# *is* the login session.
+PAMName=login
+TTYPath=/dev/tty1
+StandardInput=tty-fail
+StandardOutput=journal
+StandardError=journal
+UtmpIdentifier=tty1
+# pam_systemd sets this from the session, but cage is picky about it being present
+# in the environment at exec time. Setup rewrites the uid — see kiosk/README.md.
+Environment=XDG_RUNTIME_DIR=/run/user/1001
+
+# Wipe the browser profile each boot. Three jobs: clears whatever state a visitor
+# left, discards the "Chrome didn't shut down correctly — Restore?" bar that would
+# otherwise appear on the display every time the kiosk is unplugged rather than shut
+# down cleanly, and drops any service worker registered by an earlier build.
+ExecStartPre=/bin/rm -rf /home/kiosk/.chromium-kiosk
+
+ExecStart=/usr/bin/cage -d -- /usr/bin/chromium-browser \
+    --ozone-platform=wayland \
+    --kiosk \
+    --user-data-dir=/home/kiosk/.chromium-kiosk \
+    --noerrdialogs \
+    --disable-infobars \
+    --disable-session-crashed-bubble \
+    --disable-features=Translate,TranslateUI,AutofillServerCommunication,OptimizationHints \
+    --check-for-update-interval=31536000 \
+    --autoplay-policy=no-user-gesture-required \
+    --overscroll-history-navigation=0 \
+    --disable-pinch \
+    --password-store=basic \
+    'http://localhost/?kiosk=1'
+
+Restart=always
+RestartSec=2
+
+[Install]
+# multi-user.target, NOT graphical.target — setup sets the default target to
+# multi-user (there is no display manager), so a unit wanted by graphical.target
+# would never be reached and the kiosk would simply never start.
+WantedBy=multi-user.target
