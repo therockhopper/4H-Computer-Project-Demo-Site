@@ -48,7 +48,11 @@ Environment=XDG_RUNTIME_DIR=/run/user/@KIOSK_UID@
 # down cleanly, and drops any service worker registered by an earlier build.
 ExecStartPre=/bin/rm -rf /home/@KIOSK_USER@/.chromium-kiosk
 
-ExecStart=@CAGE_BIN@ -d -- @CHROMIUM_BIN@ \
+# @CAGE_FLAGS@ is `-d -s` by default. The -s is what allows Ctrl+Alt+F2 to reach a
+# console: cage is a kiosk compositor and blocks VT switching unless asked, so without
+# it the only way onto the machine is SSH — and if SSH was never enabled, the only way
+# in is pulling the SD card. Re-run install.sh with --lock-vt to drop it for show day.
+ExecStart=@CAGE_BIN@ @CAGE_FLAGS@ -- @CHROMIUM_BIN@ \
     --ozone-platform=wayland \
     --kiosk \
     --user-data-dir=/home/@KIOSK_USER@/.chromium-kiosk \

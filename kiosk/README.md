@@ -30,6 +30,8 @@ that branch is merged to `main`.
 |---|---|
 | *(none)* | Install Node if needed, build on the Pi, deploy, configure, smoke-test, enable |
 | `--no-build` | Use an existing `dist/` instead of building — for a `dist/` built on a laptop and copied across. Skips installing Node. |
+| `--update` | Content update only: build, deploy, restart. Skips packages, user, nginx and unit. Use after `git pull`. |
+| `--lock-vt` | Drop cage's `-s`, blocking `Ctrl+Alt+F2` to a console. Maximum lockdown for show day — **make sure SSH works first**. |
 | `--offline` | Disable wifi and bluetooth at the end. Do this once the kiosk is working. |
 | `--uninstall` | Remove the service and nginx site, restore the console and the desktop target |
 
@@ -110,11 +112,23 @@ kiosk for the same VT; the unit stops `getty@tty1` via `Conflicts=` for that rea
 The kiosk owns tty1 and fills the screen, so the console is not where you left it.
 
 **`Ctrl+Alt+F2`** — switches to a second virtual terminal with a normal login prompt.
-The kiosk keeps running behind it; `Ctrl+Alt+F1` switches back. This is the quickest
-route when a keyboard is attached.
+The kiosk keeps running behind it; `Ctrl+Alt+F1` switches back.
 
-**SSH** — worth setting up for a machine that lives in a cupboard. It is off by default
-on Raspberry Pi OS, so enable it once while you still have a keyboard:
+This only works because the installer passes `-s` to cage. **Cage blocks VT switching
+by default** — it is a kiosk compositor, and refusing `Ctrl+Alt+F<n>` is one of the
+things it is for. If you installed with `--lock-vt`, or you are on an older build of
+this repo that did not pass `-s`, this key combination does nothing at all and SSH is
+your only way in.
+
+Check what your machine is running:
+
+```bash
+grep ExecStart /etc/systemd/system/kiosk.service    # look for -s
+```
+
+**SSH** — worth setting up for a machine that lives in a cupboard, and the only route
+in if VT switching is locked. It is off by default on Raspberry Pi OS, so enable it
+once while you still have a console:
 
 ```bash
 sudo systemctl enable --now ssh
@@ -257,9 +271,25 @@ you enabled console autologin, turn it back off — this setup does not use it.
 **cage exits immediately with a DRM or seat error.** `pam_systemd` is not granting a
 seat on this image. Use the autologin fallback below.
 
-**Recovery.** `sudo ./kiosk/install.sh --uninstall` removes the service and restores
-the console. If you cannot get a console at all, put the SD card in another machine and
-append ` systemd.unit=rescue.target` to the single line in `cmdline.txt`.
+**Locked out — no console, no SSH.** Power off and put the SD card in another machine.
+The `boot`/`bootfs` partition is FAT and mounts anywhere, including macOS and Windows;
+the root filesystem is ext4 and generally will not. So work from the boot partition:
+
+```bash
+touch /Volumes/bootfs/ssh        # macOS; adjust the path elsewhere
+```
+
+An empty file named `ssh` there turns SSH on at the next boot. Eject, boot the Pi, and
+`ssh pi@raspberrypi.local` — the kiosk keeps running, you just get a way in alongside
+it. This is the recovery route to reach for first.
+
+If you would rather stop the kiosk outright and you *can* read ext4, delete
+`/etc/systemd/system/multi-user.target.wants/kiosk.service` from the root partition, or
+append ` systemd.unit=rescue.target` to the single line in the boot partition's
+`cmdline.txt`.
+
+**Recovery once you have a shell.** `sudo ./kiosk/install.sh --uninstall` removes the
+service and restores the console and desktop target.
 
 ### Fallback: the autologin route
 

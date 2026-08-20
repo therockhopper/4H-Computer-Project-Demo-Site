@@ -11,6 +11,9 @@
 #                    user, nginx and unit setup. Use this after `git pull`.
 #     --no-build     use an existing dist/ instead of building (for a dist/ built
 #                    on a laptop and copied across; skips installing Node)
+#     --lock-vt      drop cage's -s flag, blocking Ctrl+Alt+F2 to a console. Maximum
+#                    lockdown for show day. Make sure SSH works first — without either
+#                    route in, recovery means pulling the SD card.
 #     --offline      disable wifi and bluetooth at the end, for show configuration
 #     --uninstall    remove the kiosk service and nginx site, restore the console
 #     -h, --help
@@ -32,6 +35,8 @@ DO_BUILD=1
 DO_OFFLINE=0
 DO_UNINSTALL=0
 DO_UPDATE=0
+# -d: no client-side decorations. -s: allow VT switching (Ctrl+Alt+F2 to a console).
+CAGE_FLAGS='-d -s'
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -53,6 +58,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --update)    DO_UPDATE=1 ;;
     --no-build)  DO_BUILD=0 ;;
+    --lock-vt)   CAGE_FLAGS='-d' ;;
     --offline)   DO_OFFLINE=1 ;;
     --uninstall) DO_UNINSTALL=1 ;;
     -h|--help)   usage ;;
@@ -248,6 +254,7 @@ verify_serving
 step "Installing the kiosk service"
 sed -e "s|@CHROMIUM_BIN@|$CHROMIUM_BIN|g" \
     -e "s|@CAGE_BIN@|$CAGE_BIN|g" \
+    -e "s|@CAGE_FLAGS@|$CAGE_FLAGS|g" \
     -e "s|@KIOSK_USER@|$KIOSK_USER|g" \
     -e "s|@KIOSK_UID@|$KIOSK_UID|g" \
     -e "s|@WEBROOT@|$WEBROOT|g" \
@@ -321,17 +328,33 @@ else
 fi
 
 # ── done ────────────────────────────────────────────────────────────────────
+if [[ "$CAGE_FLAGS" == *-s* ]]; then
+  VT_LINE="Console   Ctrl+Alt+F2 (cage -s). Ctrl+Alt+F1 returns to the kiosk."
+else
+  VT_LINE="Console   BLOCKED (--lock-vt). SSH is your only way in."
+fi
+
+# SSH is off by default on Raspberry Pi OS. Say so here rather than letting it be
+# discovered later, when the kiosk owns the screen and there is no console.
+if systemctl is-enabled ssh >/dev/null 2>&1 || systemctl is-enabled sshd >/dev/null 2>&1; then
+  SSH_LINE="SSH       enabled — $(hostname -I 2>/dev/null | awk '{print $1}')"
+else
+  SSH_LINE="SSH       NOT ENABLED — sudo systemctl enable --now ssh"
+fi
+
 cat <<EOF
 
 $BOLD Done. $RESET
 
   Site      $WEBROOT  (nginx on 127.0.0.1:80)
-  Browser   $CHROMIUM_BIN under $CAGE_BIN
+  Browser   $CHROMIUM_BIN under $CAGE_BIN $CAGE_FLAGS
   Service   kiosk.service — enabled, running
 
   Logs      journalctl -u kiosk -b -f
   Restart   sudo systemctl restart kiosk
-  Console   Ctrl+Alt+F2
+  Update    git pull && sudo ./kiosk/install.sh --update
+  $VT_LINE
+  $SSH_LINE
   Remove    sudo ./kiosk/install.sh --uninstall
 
  Reboot now and check it comes up on its own:  sudo reboot
