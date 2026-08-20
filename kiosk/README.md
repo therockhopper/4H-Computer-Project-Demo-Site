@@ -56,8 +56,14 @@ ls kiosk/          # must list this README, kiosk.service, nginx-4h.conf
 ```
 
 That `ls` is the check that matters: a plain clone gets the default branch, so if the
-kiosk work has not been merged to `main` yet, add `--branch feat/offline-support` to
-the clone and re-run it.
+kiosk work has not been merged to `main` yet, clone the branch instead:
+
+```bash
+rm -rf ~/4h
+git clone --depth 1 --branch feat/pi-kiosk \
+  https://github.com/therockhopper/4H-Computer-Project-Demo-Site.git ~/4h
+cd ~/4h
+```
 
 ### 2. Packages and user
 
