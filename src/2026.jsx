@@ -10,6 +10,16 @@ const scratchGames = [
     author: 'William Hershey',
     localPath: '/games/robinhood.html',
   },
+  {
+    title: 'Galaxy Evade',
+    author: 'Henry Hershey',
+    localPath: '/games/galaxy-evade.html',
+  },
+  {
+    title: "Gnomey's Slimey Adventure",
+    author: 'Henry Hershey',
+    localPath: '/games/gnomeys-slimey-adventure.html',
+  },
 ];
 
 const pythonPrograms = [
@@ -22,6 +32,11 @@ const pythonPrograms = [
     title: 'Chat Bot',
     author: 'William Hershey',
     sourcePath: '/2026/python/chatbot.py',
+  },
+  {
+    title: 'Animal Namer',
+    author: 'Henry Hershey',
+    sourcePath: '/2026/python/animal.py',
   },
 ];
 

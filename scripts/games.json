@@ -4,5 +4,17 @@
     "slug": "robinhood",
     "title": "Robin Hood",
     "author": "William Hershey"
+  },
+  {
+    "file": "public/2026/games/Galaxy Evade.sb3",
+    "slug": "galaxy-evade",
+    "title": "Galaxy Evade",
+    "author": "Henry Hershey"
+  },
+  {
+    "file": "public/2026/games/Gnomey's Slimey Adventure.sb3",
+    "slug": "gnomeys-slimey-adventure",
+    "title": "Gnomey's Slimey Adventure",
+    "author": "Henry Hershey"
   }
 ]

@@ -90,7 +90,11 @@ const PythonProgramViewer = ({ sourcePath, title, author }) => {
     setAwaitingInput(false);
     setRunning(false);
     if (result.status === 'error') append('error', result.error);
-    append('note', result.status === 'stopped' ? '— stopped —' : '— program finished —');
+    append(
+      'note',
+      { stopped: '— stopped —', error: '— program ended here —' }[result.status] ??
+        '— program finished —',
+    );
   }, [append, source]);
 
   const handleStop = useCallback(() => handleRef.current?.stop(), []);
