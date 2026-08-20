@@ -13,7 +13,7 @@ On a fresh Raspberry Pi OS Bookworm install, with a network available for setup:
 
 ```bash
 sudo apt update && sudo apt install -y git
-git clone --depth 1 --branch feat/pi-kiosk \
+git clone --depth 1 --branch feat/kiosk-autoupdate \
   https://github.com/therockhopper/4H-Computer-Project-Demo-Site.git ~/4h
 cd ~/4h
 sudo ./kiosk/install.sh
@@ -21,8 +21,9 @@ sudo ./kiosk/install.sh
 
 Then `sudo reboot` and work through [Verification](#verification).
 
-`--depth 1` skips ~86 MB of deleted-model history. Drop `--branch feat/pi-kiosk` once
-that branch is merged to `main`.
+`--depth 1` skips ~86 MB of deleted-model history. Drop the `--branch` flag once that
+branch is merged to `main` — and note the boot-time auto-updater follows whichever
+branch you clone, so cloning a feature branch means the Pi tracks that branch.
 
 ### Options
 
@@ -31,6 +32,8 @@ that branch is merged to `main`.
 | *(none)* | Install Node if needed, build on the Pi, deploy, configure, smoke-test, enable |
 | `--no-build` | Use an existing `dist/` instead of building — for a `dist/` built on a laptop and copied across. Skips installing Node. |
 | `--update` | Content update only: build, deploy, restart. Skips packages, user, nginx and unit. Use after `git pull`. |
+| `--no-ssh` | Do not enable the SSH server (it is enabled by default) |
+| `--no-auto-update` | Do not install the boot-time git auto-update |
 | `--lock-vt` | Drop cage's `-s`, blocking `Ctrl+Alt+F2` to a console. Maximum lockdown for show day — **make sure SSH works first**. |
 | `--offline` | Disable wifi and bluetooth at the end. Do this once the kiosk is working. |
 | `--uninstall` | Remove the service and nginx site, restore the console and the desktop target |
@@ -52,7 +55,9 @@ The script is idempotent — re-run it after a failure or a config change.
    survives; sets the default target to `multi-user`
 9. **Smoke test** — starts the service and requires it to stay up for 10 seconds
    **before enabling it at boot**
-10. `consoleblank=0`, and `--offline` if asked
+10. **SSH** — installs and enables `sshd`, which is off by default on Raspberry Pi OS
+11. **Auto-update** — installs `kiosk-update.service` to pull and rebuild at boot
+12. `consoleblank=0`, and `--offline` if asked
 
 **Step 9 is the important one.** An enabled-but-broken unit is exactly the black-screen
 restart loop this setup hit the first time. If the service will not stay up, the script
@@ -83,11 +88,12 @@ builds on the Pi by default, just once rather than on every request.
 ```
 power on
   └─ systemd (multi-user.target — no display manager, no autologin)
-       ├─ nginx.service   → serves /var/www/4h on 127.0.0.1:80
-       └─ kiosk.service   → its own logind session on tty1 (PAMName=login)
-                              └─ cage (Wayland compositor, one app, fullscreen)
-                                   └─ chromium --kiosk http://localhost/?kiosk=1
-                                        └─ restarts in 2s if it ever dies
+       ├─ nginx.service        → serves /var/www/4h on 127.0.0.1:80
+       ├─ kiosk-update.service → git fetch + rebuild if a network is up
+       └─ kiosk.service        → its own logind session on tty1 (PAMName=login)
+                                   └─ cage (Wayland compositor, one app, fullscreen)
+                                        └─ chromium --kiosk http://localhost/?kiosk=1
+                                             └─ restarts in 2s if it ever dies
 ```
 
 `cage` is a Wayland compositor that runs exactly one application fullscreen. There is
@@ -126,12 +132,13 @@ Check what your machine is running:
 grep ExecStart /etc/systemd/system/kiosk.service    # look for -s
 ```
 
-**SSH** — worth setting up for a machine that lives in a cupboard, and the only route
-in if VT switching is locked. It is off by default on Raspberry Pi OS, so enable it
-once while you still have a console:
+**SSH** — the installer enables it (it is off by default on Raspberry Pi OS), and it is
+the only route in if VT switching is locked. To check, or if you installed with
+`--no-ssh`:
 
 ```bash
-sudo systemctl enable --now ssh
+systemctl is-active ssh
+sudo systemctl enable --now ssh   # if it is not running
 hostname -I                       # note the address
 ```
 
@@ -154,8 +161,42 @@ it back. Skip it and tty1 is just dead and black. `sudo systemctl start kiosk` w
 
 ## Updating the Pi when the website changes
 
-Nothing is automatic — the Pi is deliberately offline, so it never notices that the
-repo moved. You pull the new code and rebuild, which is three commands:
+### Automatic, at boot
+
+`kiosk-update.service` runs on every boot. If a network is reachable it fetches the
+branch the Pi is on, and when there are new commits it rebuilds and redeploys, then
+restarts the kiosk. With no network it logs "no network" and exits — which is the
+normal case at a show, where the Pi is deliberately offline.
+
+So the usual flow is: **push to the branch, plug the Pi in on your home network, wait
+about a minute.** The display comes up on the old build within seconds and swaps to the
+new one when the build finishes; it does not sit black waiting.
+
+```bash
+journalctl -u kiosk-update -b        # what happened at the last boot
+sudo systemctl start kiosk-update    # run it now, without rebooting
+```
+
+**A failed update can never take the exhibit down.** The build happens in the checkout,
+and the live webroot is only touched once it succeeds. Any failure — no network, git
+fetch failed, `npm ci` failed, build failed, no `dist/index.html` — logs the reason and
+leaves the previously deployed build serving.
+
+It also tracks which commit is actually *deployed*, in `/var/lib/4h-kiosk/deployed-commit`,
+not just which is checked out. That distinction matters: a failed build leaves the
+checkout at the new commit, so comparing checkout against origin would report "nothing
+to do" forever after and strand the kiosk on the old build. Comparing against what was
+deployed means a transient failure retries on the next boot and self-heals.
+
+Note it uses `git reset --hard`, not `git pull`. The Pi is a deployment target, not
+somewhere anyone edits code, and a merge conflict at boot would be unrecoverable
+without a keyboard. Local edits to the checkout will be discarded.
+
+Turn it off with `sudo ./kiosk/install.sh --no-auto-update`.
+
+### Manual
+
+If you would rather drive it yourself, or the Pi has been offline for a while:
 
 ```bash
 sudo rfkill unblock wifi          # the Pi needs a network for this
@@ -270,6 +311,27 @@ you enabled console autologin, turn it back off — this setup does not use it.
 
 **cage exits immediately with a DRM or seat error.** `pam_systemd` is not granting a
 seat on this image. Use the autologin fallback below.
+
+**The Pi is not picking up new commits.** Check the updater's own log first:
+
+```bash
+journalctl -u kiosk-update -b --no-pager
+```
+
+Every outcome is logged with a reason. `no network` at a show is expected — the Pi is
+meant to be offline there. Other things worth checking:
+
+```bash
+systemctl is-enabled kiosk-update              # expect enabled
+git -C ~/4h rev-parse --abbrev-ref HEAD        # which branch is it tracking?
+cat /var/lib/4h-kiosk/deployed-commit          # what is actually deployed
+git -C ~/4h rev-parse origin/$(git -C ~/4h rev-parse --abbrev-ref HEAD)
+```
+
+If the Pi is on a feature branch and you pushed to `main`, it will never see the
+change — the updater follows whatever branch the checkout is on. Switch it with
+`git -C ~/4h checkout main` (you may need to fetch that branch first, since a shallow
+single-branch clone does not have it).
 
 **Locked out — no console, no SSH.** Power off and put the SD card in another machine.
 The `boot`/`bootfs` partition is FAT and mounts anywhere, including macOS and Windows;

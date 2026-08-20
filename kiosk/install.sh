@@ -11,6 +11,9 @@
 #                    user, nginx and unit setup. Use this after `git pull`.
 #     --no-build     use an existing dist/ instead of building (for a dist/ built
 #                    on a laptop and copied across; skips installing Node)
+#     --no-ssh       do not enable the SSH server
+#     --no-auto-update
+#                    do not install the boot-time git auto-update
 #     --lock-vt      drop cage's -s flag, blocking Ctrl+Alt+F2 to a console. Maximum
 #                    lockdown for show day. Make sure SSH works first — without either
 #                    route in, recovery means pulling the SD card.
@@ -35,6 +38,10 @@ DO_BUILD=1
 DO_OFFLINE=0
 DO_UNINSTALL=0
 DO_UPDATE=0
+DO_SSH=1
+DO_AUTOUPDATE=1
+UPDATE_UNIT=/etc/systemd/system/kiosk-update.service
+UPDATE_BIN=/usr/local/bin/kiosk-auto-update
 # -d: no client-side decorations. -s: allow VT switching (Ctrl+Alt+F2 to a console).
 CAGE_FLAGS='-d -s'
 
@@ -58,6 +65,8 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --update)    DO_UPDATE=1 ;;
     --no-build)  DO_BUILD=0 ;;
+    --no-ssh)         DO_SSH=0 ;;
+    --no-auto-update) DO_AUTOUPDATE=0 ;;
     --lock-vt)   CAGE_FLAGS='-d' ;;
     --offline)   DO_OFFLINE=1 ;;
     --uninstall) DO_UNINSTALL=1 ;;
@@ -121,7 +130,15 @@ deploy_site() {
   chown -R root:www-data "$WEBROOT"
   find "$WEBROOT" -type d -exec chmod 755 {} +
   find "$WEBROOT" -type f -exec chmod 644 {} +
-  ok "$(find "$WEBROOT" -type f | wc -l | tr -d ' ') files, $(du -sh "$WEBROOT" | cut -f1)"
+
+  # Record which commit this build came from, so the boot-time auto-updater knows the
+  # webroot is current. Without it the first boot after an install would rebuild for
+  # no reason. Kept outside the webroot so rsync --delete cannot remove it.
+  local sha
+  sha="$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || echo unknown)"
+  mkdir -p /var/lib/4h-kiosk && printf '%s\n' "$sha" > /var/lib/4h-kiosk/deployed-commit
+
+  ok "$(find "$WEBROOT" -type f | wc -l | tr -d ' ') files, $(du -sh "$WEBROOT" | cut -f1), commit $(echo "$sha" | cut -c1-8)"
 }
 
 verify_serving() {
@@ -143,7 +160,8 @@ verify_serving() {
 if [[ $DO_UNINSTALL -eq 1 ]]; then
   step "Removing the kiosk"
   systemctl disable --now kiosk.service 2>/dev/null || true
-  rm -f "$UNIT"
+  systemctl disable --now kiosk-update.service 2>/dev/null || true
+  rm -f "$UNIT" "$UPDATE_UNIT" "$UPDATE_BIN"
   systemctl daemon-reload
   rm -f /etc/nginx/sites-enabled/4h "$NGINX_SITE"
   [[ -e /etc/nginx/sites-available/default ]] &&
@@ -189,6 +207,8 @@ step "Preflight"
 [[ -f "$REPO_ROOT/package.json" ]] || die "no package.json at $REPO_ROOT — run this from a clone of the repo"
 [[ -f "$REPO_ROOT/kiosk/kiosk.service.in" ]] || die "missing kiosk/kiosk.service.in"
 [[ -f "$REPO_ROOT/kiosk/nginx-4h.conf" ]] || die "missing kiosk/nginx-4h.conf"
+[[ -f "$REPO_ROOT/kiosk/auto-update.sh" ]] || die "missing kiosk/auto-update.sh"
+[[ -f "$REPO_ROOT/kiosk/kiosk-update.service.in" ]] || die "missing kiosk/kiosk-update.service.in"
 ok "repo at $REPO_ROOT"
 
 if [[ ! -e /dev/dri/card0 && ! -e /dev/dri/card1 ]]; then
@@ -269,6 +289,45 @@ ok "default target: multi-user (no display manager)"
 
 systemctl daemon-reload
 
+# ── ssh ─────────────────────────────────────────────────────────────────────
+# Off by default on Raspberry Pi OS. Once the kiosk owns the screen this is the only
+# reliable way back in, so it is enabled unless explicitly refused.
+if [[ $DO_SSH -eq 1 ]]; then
+  step "Enabling SSH"
+  if ! dpkg -s openssh-server >/dev/null 2>&1; then
+    apt-get install -y -qq openssh-server >/dev/null || warn "could not install openssh-server"
+  fi
+  systemctl enable --now ssh >/dev/null 2>&1 || systemctl enable --now sshd >/dev/null 2>&1 ||
+    warn "could not enable the ssh service"
+  if systemctl is-active --quiet ssh || systemctl is-active --quiet sshd; then
+    ok "sshd running at $(hostname -I 2>/dev/null | awk '{print $1}')"
+    warn "make sure this account has a strong password, or install an SSH key"
+  else
+    warn "ssh did not start — check: systemctl status ssh"
+  fi
+else
+  step "Skipping SSH (--no-ssh)"
+fi
+
+# ── auto-update ─────────────────────────────────────────────────────────────
+if [[ $DO_AUTOUPDATE -eq 1 ]]; then
+  step "Installing boot-time auto-update"
+  install -m 755 "$REPO_ROOT/kiosk/auto-update.sh" "$UPDATE_BIN"
+  sed -e "s|@REPO@|$REPO_ROOT|g" -e "s|@WEBROOT@|$WEBROOT|g" \
+      "$REPO_ROOT/kiosk/kiosk-update.service.in" > "$UPDATE_UNIT"
+  grep -q '@[A-Z_]*@' "$UPDATE_UNIT" && die "unsubstituted placeholder in $UPDATE_UNIT"
+  chmod 644 "$UPDATE_UNIT"
+  systemctl daemon-reload
+  systemctl enable kiosk-update.service >/dev/null 2>&1
+  ok "kiosk-update.service enabled — checks git on each boot"
+  ok "tracking branch '$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)' in $REPO_ROOT"
+else
+  step "Skipping auto-update (--no-auto-update)"
+  systemctl disable --now kiosk-update.service >/dev/null 2>&1 || true
+  rm -f "$UPDATE_UNIT" "$UPDATE_BIN"
+  systemctl daemon-reload
+fi
+
 # ── smoke test ──────────────────────────────────────────────────────────────
 # Start it before enabling it. If it cannot run now it will not run at boot either,
 # and an enabled-but-broken unit is the black-screen loop.
@@ -328,6 +387,12 @@ else
 fi
 
 # ── done ────────────────────────────────────────────────────────────────────
+if [[ $DO_AUTOUPDATE -eq 1 ]]; then
+  AUTO_LINE="Auto      on — pulls + rebuilds at boot when a network is present"
+else
+  AUTO_LINE="Auto      off (--no-auto-update)"
+fi
+
 if [[ "$CAGE_FLAGS" == *-s* ]]; then
   VT_LINE="Console   Ctrl+Alt+F2 (cage -s). Ctrl+Alt+F1 returns to the kiosk."
 else
@@ -353,6 +418,7 @@ $BOLD Done. $RESET
   Logs      journalctl -u kiosk -b -f
   Restart   sudo systemctl restart kiosk
   Update    git pull && sudo ./kiosk/install.sh --update
+  $AUTO_LINE
   $VT_LINE
   $SSH_LINE
   Remove    sudo ./kiosk/install.sh --uninstall

@@ -1,0 +1,32 @@
+# Boot-time auto-update for the 4H Showcase kiosk.
+#
+# TEMPLATE — install.sh substitutes @REPO@ and @WEBROOT@ and writes the result to
+# /etc/systemd/system/kiosk-update.service.
+#
+# This does NOT gate the kiosk starting. kiosk.service comes up immediately with
+# whatever is already deployed, so the display is live in seconds; this runs
+# alongside it and restarts the kiosk only if it actually produced a new build.
+# Blocking the display on a git fetch and a one-minute build would mean a black
+# screen at every power-on, including at a venue with flaky wifi.
+
+[Unit]
+Description=4H Showcase — update kiosk content from git
+After=network.target nginx.service
+Wants=nginx.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=no
+
+# The script handles its own failures and always exits 0 — a failed update leaves the
+# previously deployed build serving. TimeoutStartSec is the backstop for the case it
+# cannot handle: a network that accepts the connection then stalls forever mid-clone.
+TimeoutStartSec=600
+
+ExecStart=/usr/local/bin/kiosk-auto-update @REPO@ @WEBROOT@
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
