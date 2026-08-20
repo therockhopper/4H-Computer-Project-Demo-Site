@@ -1,0 +1,428 @@
+#!/usr/bin/env bash
+#
+# 4H Showcase — Raspberry Pi kiosk installer.
+#
+# Run from a clone of the repo on the Pi:
+#     sudo ./kiosk/install.sh
+#
+# Idempotent: safe to re-run after a failure or a config change.
+#
+#     --update       content update only: build, deploy, restart. Skips packages,
+#                    user, nginx and unit setup. Use this after `git pull`.
+#     --no-build     use an existing dist/ instead of building (for a dist/ built
+#                    on a laptop and copied across; skips installing Node)
+#     --no-ssh       do not enable the SSH server
+#     --no-auto-update
+#                    do not install the boot-time git auto-update
+#     --lock-vt      drop cage's -s flag, blocking Ctrl+Alt+F2 to a console. Maximum
+#                    lockdown for show day. Make sure SSH works first — without either
+#                    route in, recovery means pulling the SD card.
+#     --offline      disable wifi and bluetooth at the end, for show configuration
+#     --uninstall    remove the kiosk service and nginx site, restore the console
+#     -h, --help
+#
+# The script refuses to enable a service it could not start. That is deliberate: the
+# first version of this setup hardcoded a Chromium path that did not exist on the
+# image, and the Pi booted to a black screen restarting every two seconds with
+# nothing useful on screen to explain it.
+
+set -euo pipefail
+
+KIOSK_USER=kiosk
+WEBROOT=/var/www/4h
+UNIT=/etc/systemd/system/kiosk.service
+NGINX_SITE=/etc/nginx/sites-available/4h
+NODE_MAJOR=20
+
+DO_BUILD=1
+DO_OFFLINE=0
+DO_UNINSTALL=0
+DO_UPDATE=0
+DO_SSH=1
+DO_AUTOUPDATE=1
+UPDATE_UNIT=/etc/systemd/system/kiosk-update.service
+UPDATE_BIN=/usr/local/bin/kiosk-auto-update
+# -d: no client-side decorations. -s: allow VT switching (Ctrl+Alt+F2 to a console).
+CAGE_FLAGS='-d -s'
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# ── output ──────────────────────────────────────────────────────────────────
+if [[ -t 1 ]]; then
+  BOLD=$'\033[1m'; RED=$'\033[31m'; GREEN=$'\033[32m'; YELLOW=$'\033[33m'; RESET=$'\033[0m'
+else
+  BOLD=''; RED=''; GREEN=''; YELLOW=''; RESET=''
+fi
+
+step() { printf '\n%s==> %s%s\n' "$BOLD" "$*" "$RESET"; }
+ok()   { printf '    %s✓%s %s\n' "$GREEN" "$RESET" "$*"; }
+warn() { printf '    %s!%s %s\n' "$YELLOW" "$RESET" "$*"; }
+die()  { printf '\n%sERROR:%s %s\n\n' "$RED" "$RESET" "$*" >&2; exit 1; }
+
+usage() { sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0; }
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --update)    DO_UPDATE=1 ;;
+    --no-build)  DO_BUILD=0 ;;
+    --no-ssh)         DO_SSH=0 ;;
+    --no-auto-update) DO_AUTOUPDATE=0 ;;
+    --lock-vt)   CAGE_FLAGS='-d' ;;
+    --offline)   DO_OFFLINE=1 ;;
+    --uninstall) DO_UNINSTALL=1 ;;
+    -h|--help)   usage ;;
+    *) die "unknown option: $1 (try --help)" ;;
+  esac
+  shift
+done
+
+[[ $EUID -eq 0 ]] || die "run with sudo: sudo $0 $*"
+command -v systemctl >/dev/null || die "this needs systemd"
+
+# ── shared steps ────────────────────────────────────────────────────────────
+# Used by both the full install and the --update fast path.
+
+build_site() {
+  if [[ $DO_BUILD -eq 0 ]]; then
+    step "Skipping build (--no-build)"
+    return
+  fi
+  step "Building the site"
+
+  local need_node=1 cur
+  if command -v node >/dev/null; then
+    cur="$(node -p 'process.versions.node.split(".")[0]')"
+    [[ "$cur" -ge 18 ]] && { need_node=0; ok "node $(node -v) is new enough"; }
+  fi
+  if [[ $need_node -eq 1 ]]; then
+    ok "installing Node $NODE_MAJOR"
+    curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash - >/dev/null 2>&1
+    apt-get install -y -qq nodejs >/dev/null
+    ok "node $(node -v)"
+  fi
+
+  cd "$REPO_ROOT"
+  # -H so npm's cache lands in that user's home rather than root's. Output is left
+  # visible on purpose: a silent failure here is one of the hardest things to debug
+  # over a slow SSH link to a Pi in a cupboard.
+  local run_as="${SUDO_USER:-root}"
+  if [[ "$run_as" != "root" ]]; then
+    sudo -u "$run_as" -H npm ci --no-fund --no-audit || die "npm ci failed (see output above)"
+    sudo -u "$run_as" -H npm run build || die "build failed (see output above)"
+  else
+    npm ci --no-fund --no-audit || die "npm ci failed (see output above)"
+    npm run build || die "build failed (see output above)"
+  fi
+  ok "built $(du -sh "$REPO_ROOT/dist" | cut -f1) into dist/"
+}
+
+deploy_site() {
+  [[ -f "$REPO_ROOT/dist/index.html" ]] ||
+    die "no dist/index.html — build first, or copy a laptop-built dist/ here"
+
+  step "Deploying to $WEBROOT"
+  mkdir -p "$WEBROOT"
+  if command -v rsync >/dev/null; then
+    rsync -a --delete "$REPO_ROOT/dist/" "$WEBROOT/"
+  else
+    rm -rf "${WEBROOT:?}/"* && cp -a "$REPO_ROOT/dist/." "$WEBROOT/"
+  fi
+  chown -R root:www-data "$WEBROOT"
+  find "$WEBROOT" -type d -exec chmod 755 {} +
+  find "$WEBROOT" -type f -exec chmod 644 {} +
+
+  # Record which commit this build came from, so the boot-time auto-updater knows the
+  # webroot is current. Without it the first boot after an install would rebuild for
+  # no reason. Kept outside the webroot so rsync --delete cannot remove it.
+  local sha
+  sha="$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || echo unknown)"
+  mkdir -p /var/lib/4h-kiosk && printf '%s\n' "$sha" > /var/lib/4h-kiosk/deployed-commit
+
+  ok "$(find "$WEBROOT" -type f | wc -l | tr -d ' ') files, $(du -sh "$WEBROOT" | cut -f1), commit $(echo "$sha" | cut -c1-8)"
+}
+
+verify_serving() {
+  sleep 1
+  curl -sf -o /dev/null http://localhost/ || die "nginx is not serving / — check: systemctl status nginx"
+  ok "GET / → 200"
+
+  # The SPA-fallback case that a directory in public/ silently breaks. If this returns
+  # 403 the try_files rule is wrong and deep links would fail at the show.
+  local code
+  code="$(curl -s -o /dev/null -w '%{http_code}' http://localhost/2026)"
+  [[ "$code" == "200" ]] || die "GET /2026 → $code (expected 200). SPA fallback is broken."
+  curl -s http://localhost/2026 | grep -q '<div id="root">' ||
+    die "GET /2026 did not return the app shell"
+  ok "GET /2026 → 200, app shell served"
+}
+
+# ── uninstall ───────────────────────────────────────────────────────────────
+if [[ $DO_UNINSTALL -eq 1 ]]; then
+  step "Removing the kiosk"
+  systemctl disable --now kiosk.service 2>/dev/null || true
+  systemctl disable --now kiosk-update.service 2>/dev/null || true
+  rm -f "$UNIT" "$UPDATE_UNIT" "$UPDATE_BIN"
+  systemctl daemon-reload
+  rm -f /etc/nginx/sites-enabled/4h "$NGINX_SITE"
+  [[ -e /etc/nginx/sites-available/default ]] &&
+    ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+  systemctl reload nginx 2>/dev/null || true
+  systemctl start getty@tty1.service 2>/dev/null || true
+  systemctl set-default graphical.target >/dev/null 2>&1 || true
+  ok "kiosk service and nginx site removed"
+  warn "the '$KIOSK_USER' user and $WEBROOT were left in place — remove by hand if you want them gone"
+  echo; echo "Reboot to get the normal desktop back."
+  exit 0
+fi
+
+# ── update fast path ────────────────────────────────────────────────────────
+# Content-only update: the machine is already configured, so packages, user, nginx
+# and the unit are all left alone. Just rebuild, redeploy and restart.
+if [[ $DO_UPDATE -eq 1 ]]; then
+  [[ -f "$REPO_ROOT/package.json" ]] || die "no package.json at $REPO_ROOT — run this from the repo"
+  [[ -f "$UNIT" ]] || die "kiosk is not installed yet — run without --update first"
+
+  build_site
+  deploy_site
+
+  step "Restarting"
+  systemctl restart nginx
+  verify_serving
+  # The restart also wipes the browser profile, which drops any HTTP-cached copy of
+  # index.html along with it.
+  systemctl restart kiosk.service
+  sleep 5
+  systemctl is-active --quiet kiosk.service ||
+    { journalctl -u kiosk -n 20 --no-pager; die "kiosk did not come back after restart"; }
+  ok "kiosk restarted and running"
+
+  echo; echo "Updated. The display should be showing the new build."; echo
+  exit 0
+fi
+
+# ── preflight ───────────────────────────────────────────────────────────────
+# Everything that could fail later is checked here, before anything is changed.
+step "Preflight"
+
+[[ -f "$REPO_ROOT/package.json" ]] || die "no package.json at $REPO_ROOT — run this from a clone of the repo"
+[[ -f "$REPO_ROOT/kiosk/kiosk.service.in" ]] || die "missing kiosk/kiosk.service.in"
+[[ -f "$REPO_ROOT/kiosk/nginx-4h.conf" ]] || die "missing kiosk/nginx-4h.conf"
+[[ -f "$REPO_ROOT/kiosk/auto-update.sh" ]] || die "missing kiosk/auto-update.sh"
+[[ -f "$REPO_ROOT/kiosk/kiosk-update.service.in" ]] || die "missing kiosk/kiosk-update.service.in"
+ok "repo at $REPO_ROOT"
+
+if [[ ! -e /dev/dri/card0 && ! -e /dev/dri/card1 ]]; then
+  warn "no /dev/dri/card* — no GPU node visible. cage will not start."
+  warn "on a Pi this usually means the vc4 driver is not loaded. Check /boot/firmware/config.txt"
+fi
+
+ARCH="$(uname -m)"
+ok "arch $ARCH, kernel $(uname -r)"
+
+# ── packages ────────────────────────────────────────────────────────────────
+step "Installing packages"
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq
+apt-get install -y -qq --no-install-recommends cage nginx ca-certificates curl >/dev/null
+ok "cage, nginx"
+
+# Chromium is the package whose binary name varies. Install whichever exists.
+if ! command -v chromium-browser >/dev/null && ! command -v chromium >/dev/null; then
+  apt-get install -y -qq chromium 2>/dev/null || apt-get install -y -qq chromium-browser 2>/dev/null ||
+    die "could not install Chromium (tried 'chromium' and 'chromium-browser')"
+fi
+
+# THE fix for the black-screen loop: resolve the real path now, and bake it into the
+# unit, rather than hardcoding a name that may not exist on this image.
+CHROMIUM_BIN="$(command -v chromium-browser || command -v chromium || true)"
+[[ -x "$CHROMIUM_BIN" ]] || die "Chromium installed but no executable found on PATH"
+CAGE_BIN="$(command -v cage)"
+ok "chromium → $CHROMIUM_BIN"
+ok "cage     → $CAGE_BIN"
+
+# ── kiosk user ──────────────────────────────────────────────────────────────
+step "Kiosk user"
+if id "$KIOSK_USER" >/dev/null 2>&1; then
+  ok "user '$KIOSK_USER' exists"
+else
+  useradd -m -G video,input,render,tty "$KIOSK_USER"
+  ok "created user '$KIOSK_USER'"
+fi
+# Group membership is corrected on every run — a user that predates this script may
+# be missing the groups that grant DRM and input access.
+usermod -aG video,input,render,tty "$KIOSK_USER"
+KIOSK_UID="$(id -u "$KIOSK_USER")"
+ok "uid $KIOSK_UID, groups: $(id -Gn "$KIOSK_USER" | tr ' ' ',')"
+
+# ── build and deploy ────────────────────────────────────────────────────────
+build_site
+deploy_site
+
+# ── nginx ───────────────────────────────────────────────────────────────────
+step "Configuring nginx"
+cp "$REPO_ROOT/kiosk/nginx-4h.conf" "$NGINX_SITE"
+ln -sf "$NGINX_SITE" /etc/nginx/sites-enabled/4h
+rm -f /etc/nginx/sites-enabled/default
+nginx -t >/dev/null 2>&1 || { nginx -t; die "nginx config test failed"; }
+systemctl enable nginx >/dev/null 2>&1
+systemctl restart nginx
+ok "nginx restarted"
+
+verify_serving
+
+# ── systemd unit ────────────────────────────────────────────────────────────
+step "Installing the kiosk service"
+sed -e "s|@CHROMIUM_BIN@|$CHROMIUM_BIN|g" \
+    -e "s|@CAGE_BIN@|$CAGE_BIN|g" \
+    -e "s|@CAGE_FLAGS@|$CAGE_FLAGS|g" \
+    -e "s|@KIOSK_USER@|$KIOSK_USER|g" \
+    -e "s|@KIOSK_UID@|$KIOSK_UID|g" \
+    -e "s|@WEBROOT@|$WEBROOT|g" \
+    "$REPO_ROOT/kiosk/kiosk.service.in" > "$UNIT"
+grep -q '@[A-Z_]*@' "$UNIT" && die "unsubstituted placeholder left in $UNIT"
+chmod 644 "$UNIT"
+ok "wrote $UNIT"
+
+systemctl set-default multi-user.target >/dev/null 2>&1
+systemctl disable lightdm >/dev/null 2>&1 || true
+ok "default target: multi-user (no display manager)"
+
+systemctl daemon-reload
+
+# ── ssh ─────────────────────────────────────────────────────────────────────
+# Off by default on Raspberry Pi OS. Once the kiosk owns the screen this is the only
+# reliable way back in, so it is enabled unless explicitly refused.
+if [[ $DO_SSH -eq 1 ]]; then
+  step "Enabling SSH"
+  if ! dpkg -s openssh-server >/dev/null 2>&1; then
+    apt-get install -y -qq openssh-server >/dev/null || warn "could not install openssh-server"
+  fi
+  systemctl enable --now ssh >/dev/null 2>&1 || systemctl enable --now sshd >/dev/null 2>&1 ||
+    warn "could not enable the ssh service"
+  if systemctl is-active --quiet ssh || systemctl is-active --quiet sshd; then
+    ok "sshd running at $(hostname -I 2>/dev/null | awk '{print $1}')"
+    warn "make sure this account has a strong password, or install an SSH key"
+  else
+    warn "ssh did not start — check: systemctl status ssh"
+  fi
+else
+  step "Skipping SSH (--no-ssh)"
+fi
+
+# ── auto-update ─────────────────────────────────────────────────────────────
+if [[ $DO_AUTOUPDATE -eq 1 ]]; then
+  step "Installing boot-time auto-update"
+  install -m 755 "$REPO_ROOT/kiosk/auto-update.sh" "$UPDATE_BIN"
+  sed -e "s|@REPO@|$REPO_ROOT|g" -e "s|@WEBROOT@|$WEBROOT|g" \
+      "$REPO_ROOT/kiosk/kiosk-update.service.in" > "$UPDATE_UNIT"
+  grep -q '@[A-Z_]*@' "$UPDATE_UNIT" && die "unsubstituted placeholder in $UPDATE_UNIT"
+  chmod 644 "$UPDATE_UNIT"
+  systemctl daemon-reload
+  systemctl enable kiosk-update.service >/dev/null 2>&1
+  ok "kiosk-update.service enabled — checks git on each boot"
+  ok "tracking branch '$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)' in $REPO_ROOT"
+else
+  step "Skipping auto-update (--no-auto-update)"
+  systemctl disable --now kiosk-update.service >/dev/null 2>&1 || true
+  rm -f "$UPDATE_UNIT" "$UPDATE_BIN"
+  systemctl daemon-reload
+fi
+
+# ── smoke test ──────────────────────────────────────────────────────────────
+# Start it before enabling it. If it cannot run now it will not run at boot either,
+# and an enabled-but-broken unit is the black-screen loop.
+step "Smoke test"
+warn "the screen will switch to the kiosk now"
+systemctl reset-failed kiosk.service 2>/dev/null || true
+systemctl start kiosk.service || true
+
+for _ in $(seq 1 10); do
+  sleep 1
+  systemctl is-active --quiet kiosk.service || break
+done
+
+if systemctl is-active --quiet kiosk.service; then
+  ok "service stayed up for 10s"
+  systemctl enable kiosk.service >/dev/null 2>&1
+  ok "enabled at boot"
+else
+  echo
+  printf '%s%s%s\n' "$RED" "The service did not stay running. NOT enabling it at boot," "$RESET"
+  printf '%s%s%s\n' "$RED" "so you get a normal console instead of a black screen." "$RESET"
+  echo
+  echo "Last 30 log lines:"
+  journalctl -u kiosk -n 30 --no-pager || true
+  echo
+  echo "Common causes:"
+  echo "  status=203/EXEC      → binary path wrong (this script resolved: $CHROMIUM_BIN)"
+  echo "  DRM / seat errors    → pam_systemd did not grant a seat; try the autologin"
+  echo "                         fallback in kiosk/README.md"
+  echo "  tty1 busy            → something else holds the console"
+  echo
+  die "kiosk service failed to start (see above)"
+fi
+
+# ── offline ─────────────────────────────────────────────────────────────────
+if [[ $DO_OFFLINE -eq 1 ]]; then
+  step "Taking the Pi off the network"
+  rfkill block wifi bluetooth 2>/dev/null || true
+  systemctl disable --now wpa_supplicant bluetooth >/dev/null 2>&1 || true
+  ok "wifi and bluetooth disabled — re-enable with: sudo rfkill unblock wifi"
+fi
+
+# ── screen blanking ─────────────────────────────────────────────────────────
+step "Display blanking"
+CMDLINE=/boot/firmware/cmdline.txt
+[[ -f $CMDLINE ]] || CMDLINE=/boot/cmdline.txt
+if [[ -f $CMDLINE ]]; then
+  if grep -q 'consoleblank=0' "$CMDLINE"; then
+    ok "consoleblank=0 already set"
+  else
+    cp "$CMDLINE" "$CMDLINE.bak"
+    sed -i '1s/$/ consoleblank=0/' "$CMDLINE"
+    ok "added consoleblank=0 (backup at $CMDLINE.bak)"
+  fi
+else
+  warn "no cmdline.txt found — set consoleblank=0 yourself if the screen blanks"
+fi
+
+# ── done ────────────────────────────────────────────────────────────────────
+if [[ $DO_AUTOUPDATE -eq 1 ]]; then
+  AUTO_LINE="Auto      on — pulls + rebuilds at boot when a network is present"
+else
+  AUTO_LINE="Auto      off (--no-auto-update)"
+fi
+
+if [[ "$CAGE_FLAGS" == *-s* ]]; then
+  VT_LINE="Console   Ctrl+Alt+F2 (cage -s). Ctrl+Alt+F1 returns to the kiosk."
+else
+  VT_LINE="Console   BLOCKED (--lock-vt). SSH is your only way in."
+fi
+
+# SSH is off by default on Raspberry Pi OS. Say so here rather than letting it be
+# discovered later, when the kiosk owns the screen and there is no console.
+if systemctl is-enabled ssh >/dev/null 2>&1 || systemctl is-enabled sshd >/dev/null 2>&1; then
+  SSH_LINE="SSH       enabled — $(hostname -I 2>/dev/null | awk '{print $1}')"
+else
+  SSH_LINE="SSH       NOT ENABLED — sudo systemctl enable --now ssh"
+fi
+
+cat <<EOF
+
+$BOLD Done. $RESET
+
+  Site      $WEBROOT  (nginx on 127.0.0.1:80)
+  Browser   $CHROMIUM_BIN under $CAGE_BIN $CAGE_FLAGS
+  Service   kiosk.service — enabled, running
+
+  Logs      journalctl -u kiosk -b -f
+  Restart   sudo systemctl restart kiosk
+  Update    git pull && sudo ./kiosk/install.sh --update
+  $AUTO_LINE
+  $VT_LINE
+  $SSH_LINE
+  Remove    sudo ./kiosk/install.sh --uninstall
+
+ Reboot now and check it comes up on its own:  sudo reboot
+
+EOF
