@@ -605,6 +605,147 @@ h1 em {
 }
 
 /* ──────────────────────────────────────
+   Python Program — source + terminal
+   ────────────────────────────────────── */
+.python-body {
+  display: block;
+  height: 320px;
+  padding: 0;
+  background: var(--green-deep);
+  overflow: hidden;
+}
+
+.python-source,
+.python-terminal {
+  height: 100%;
+  margin: 0;
+  padding: 2.5rem 1rem 1rem;
+  overflow: auto;
+  font-family: 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 0.76rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  tab-size: 4;
+}
+
+.python-source {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.python-terminal {
+  color: var(--green-thumb);
+}
+
+.python-in {
+  color: var(--mint);
+}
+
+.python-note {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.python-error {
+  color: #fca5a5;
+}
+
+/* The prompt has to read as the next line of the transcript, not as a form. */
+.python-prompt {
+  display: flex;
+  align-items: baseline;
+  color: var(--mint);
+}
+
+.python-prompt input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--mint);
+  caret-color: var(--mint);
+  font: inherit;
+}
+
+.python-prompt input:focus {
+  outline: none;
+}
+
+.python-controls {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem 0;
+  background: white;
+}
+
+.python-button {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.3rem 0.7rem;
+  background: var(--green-mid);
+  color: white;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.python-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.python-button.run:hover:not(:disabled) {
+  background: var(--green-rich);
+}
+
+.python-button.stop {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.python-button.ghost {
+  margin-left: auto;
+  background: none;
+  color: var(--green-mid);
+}
+
+.python-button.ghost:hover:not(:disabled) {
+  background: var(--green-pale);
+}
+
+/* highlight.js tokens, mapped onto the site palette instead of pulling in one
+   of the packaged themes. */
+.hljs-keyword,
+.hljs-meta {
+  color: var(--mint);
+}
+
+.hljs-string {
+  color: var(--amber);
+}
+
+.hljs-number,
+.hljs-literal {
+  color: #fdba74;
+}
+
+.hljs-comment {
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+.hljs-built_in,
+.hljs-title.function_ {
+  color: #93c5fd;
+}
+
+.hljs-params {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+/* ──────────────────────────────────────
    Responsive — Tablet (≤768px)
    ────────────────────────────────────── */
 @media (max-width: 768px) {

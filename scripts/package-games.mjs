@@ -2,6 +2,10 @@
  * Packages each Scratch project into a self-contained HTML file under
  * public/games/, so the games keep working with no connection.
  *
+ * A game is sourced either from a local `file` (an .sb3 exported from Scratch,
+ * which is the only option for a project that was never shared) or by `id` from
+ * scratch.mit.edu.
+ *
  * The TurboWarp packager embeds the whole .sb3 — code, sprites, costumes,
  * sounds — plus the VM and renderer into one file that makes no network requests
  * at runtime. That is what makes offline play possible at all: a
@@ -43,6 +47,19 @@ try {
 
 mkdirSync(outDir, { recursive: true });
 
+async function fetchFromScratch(id) {
+  // trampoline.turbowarp.org issues the token the Scratch project API needs.
+  const metaRes = await fetch(`https://trampoline.turbowarp.org/api/projects/${id}`);
+  if (!metaRes.ok) throw new Error(`metadata HTTP ${metaRes.status}`);
+  const meta = await metaRes.json();
+
+  const dataRes = await fetch(
+    `https://projects.scratch.mit.edu/${id}?token=${meta.project_token}`
+  );
+  if (!dataRes.ok) throw new Error(`project HTTP ${dataRes.status}`);
+  return dataRes.arrayBuffer();
+}
+
 const mb = (n) => `${(n / 1024 / 1024).toFixed(1)} MB`;
 let failures = 0;
 
@@ -51,16 +68,9 @@ for (const game of selected) {
   process.stdout.write(`  ${game.slug.padEnd(26)} `);
 
   try {
-    // trampoline.turbowarp.org issues the token the Scratch project API needs.
-    const metaRes = await fetch(`https://trampoline.turbowarp.org/api/projects/${game.id}`);
-    if (!metaRes.ok) throw new Error(`metadata HTTP ${metaRes.status}`);
-    const meta = await metaRes.json();
-
-    const dataRes = await fetch(
-      `https://projects.scratch.mit.edu/${game.id}?token=${meta.project_token}`
-    );
-    if (!dataRes.ok) throw new Error(`project HTTP ${dataRes.status}`);
-    const projectData = await dataRes.arrayBuffer();
+    const projectData = game.file
+      ? readFileSync(join(here, '..', game.file))
+      : await fetchFromScratch(game.id);
 
     const packager = new Packager.Packager();
     packager.project = await Packager.loadProject(projectData);

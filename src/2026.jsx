@@ -1,23 +1,27 @@
 import './App.css';
 
-import STLModelViewer from './STLModelViewer';
 import ScratchGameViewer from './ScratchGameViewer';
+import PythonProgramViewer from './PythonProgramViewer';
 import Navigation from './Navigation';
-
-const models = [
-  {
-    stlPath: '/2026/models/EmmettRobot.stl',
-    title: 'The Big Bad Wolf',
-    description: 'Emmett McNabb',
-  },
-];
 
 const scratchGames = [
   {
-    title: 'Fly Bat',
-    author: 'Malcolm Beaton',
-    localPath: '/games/fly-bat.html',
-    url: 'https://scratch.mit.edu/projects/1123823210',
+    title: 'Robin Hood',
+    author: 'William Hershey',
+    localPath: '/games/robinhood.html',
+  },
+];
+
+const pythonPrograms = [
+  {
+    title: 'Fraction Bot',
+    author: 'William Hershey',
+    sourcePath: '/2026/python/fracbot.py',
+  },
+  {
+    title: 'Chat Bot',
+    author: 'William Hershey',
+    sourcePath: '/2026/python/chatbot.py',
   },
 ];
 
@@ -34,29 +38,11 @@ function Project26() {
       <div className="page-wrap">
         <div className="description-card">
           <p>
-            Projects created by members of the Port Hood Island View 4H club in 2026. 3D models designed using
-            {' '}<a href="https://www.tinkercad.com" target="_blank" rel="noopener noreferrer">Tinkercad</a>,
-            {' '}<a href="https://www.blender.org" target="_blank" rel="noopener noreferrer">Blender</a>, or
-            {' '}<a href="https://www.autodesk.com/products/fusion-360" target="_blank" rel="noopener noreferrer">Fusion360</a>.
+            Projects created by members of the Port Hood Island View 4H club in 2026.
             {' '}Games created using
             {' '}<a href="https://scratch.mit.edu" target="_blank" rel="noopener noreferrer">Scratch</a>.
+            {' '}Python programs run right here in the page &mdash; press Run and type your answers.
           </p>
-        </div>
-
-        <div className="section-head">
-          <h2 className="section-title">CAD Models</h2>
-          <span className="section-chip">3D Design</span>
-        </div>
-        <div className="section-rule"></div>
-        <div className="model-gallery">
-          {models.map((model, index) => (
-            <STLModelViewer
-              key={index}
-              stlPath={model.stlPath}
-              title={model.title}
-              description={model.description}
-            />
-          ))}
         </div>
 
         <div className="section-head">
@@ -76,10 +62,26 @@ function Project26() {
           ))}
         </div>
 
+        <div className="section-head">
+          <h2 className="section-title">Python Programs</h2>
+          <span className="section-chip">Code</span>
+        </div>
+        <div className="section-rule"></div>
+        <div className="model-gallery">
+          {pythonPrograms.map((program, index) => (
+            <PythonProgramViewer
+              key={index}
+              sourcePath={program.sourcePath}
+              title={program.title}
+              author={program.author}
+            />
+          ))}
+        </div>
+
         <div className="qr-code-section">
           <img src='/qr.png' alt="QR Code" className="qr-code" />
           <p className="qr-code-description">
-            Scan to view this site on your phone. 3D models and Scratch games may load better on mobile.
+            Scan to view this site on your phone. Scratch games may load better on mobile.
           </p>
         </div>
 

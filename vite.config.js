@@ -22,6 +22,9 @@ export default defineConfig({
         globPatterns: [
           '**/*.{js,css,html,woff2}',
           'images/favicon.ico',
+          // Source for the runnable Python cards — fetched at runtime, tiny,
+          // and the cards are blank offline without them.
+          '2026/python/*.py',
           'qr.png',
           'icons/*.png',
           'offline-manifest.json',
