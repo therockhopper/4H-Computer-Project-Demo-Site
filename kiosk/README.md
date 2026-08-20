@@ -13,17 +13,27 @@ On a fresh Raspberry Pi OS Bookworm install, with a network available for setup:
 
 ```bash
 sudo apt update && sudo apt install -y git
-git clone --depth 1 --branch feat/kiosk-autoupdate \
-  https://github.com/therockhopper/4H-Computer-Project-Demo-Site.git ~/4h
+git clone --depth 1 https://github.com/therockhopper/4H-Computer-Project-Demo-Site.git ~/4h
 cd ~/4h
 sudo ./kiosk/install.sh
 ```
 
 Then `sudo reboot` and work through [Verification](#verification).
 
-`--depth 1` skips ~86 MB of deleted-model history. Drop the `--branch` flag once that
-branch is merged to `main` — and note the boot-time auto-updater follows whichever
-branch you clone, so cloning a feature branch means the Pi tracks that branch.
+`--depth 1` skips ~86 MB of deleted-model history, leaving about 17 MB on disk.
+
+This clones `main`, which is what the Pi should track. The boot-time auto-updater
+follows whichever branch the checkout is on, so cloning a feature branch would leave
+the Pi pinned to it and blind to anything you later merge to `main`. If you ever need
+to point an existing Pi back at `main`:
+
+```bash
+cd ~/4h
+git remote set-branches origin main      # a shallow clone only knows the one branch
+git fetch --depth 1 origin main
+git checkout -B main origin/main
+sudo ./kiosk/install.sh --update
+```
 
 ### Options
 
