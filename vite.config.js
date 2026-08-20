@@ -25,6 +25,7 @@ export default defineConfig({
           // Source for the runnable Python cards — fetched at runtime, tiny,
           // and the cards are blank offline without them.
           '2026/python/*.py',
+          '2026/pdf/*.pdf',
           'qr.png',
           'icons/*.png',
           'offline-manifest.json',
