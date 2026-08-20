@@ -24,11 +24,12 @@ still build on the Pi (step 3), you just build once rather than on every request
 
 ```
 power on
-  └─ systemd (graphical.target)
+  └─ systemd (multi-user.target — no display manager, no autologin)
        ├─ nginx.service   → serves /var/www/4h on 127.0.0.1:80
-       └─ kiosk.service   → cage (Wayland compositor, one app, fullscreen)
-                              └─ chromium --kiosk http://localhost/?kiosk=1
-                                   └─ restarts in 2s if it ever dies
+       └─ kiosk.service   → its own logind session on tty1 (PAMName=login)
+                              └─ cage (Wayland compositor, one app, fullscreen)
+                                   └─ chromium --kiosk http://localhost/?kiosk=1
+                                        └─ restarts in 2s if it ever dies
 ```
 
 `cage` is a Wayland compositor that runs exactly one application fullscreen. There is
@@ -119,9 +120,24 @@ sudo systemctl set-default multi-user.target
 sudo systemctl disable lightdm 2>/dev/null || true
 
 sudo cp ~/4h/kiosk/kiosk.service /etc/systemd/system/kiosk.service
+
+# The unit hardcodes /run/user/1001; point it at the real uid.
+sudo sed -i "s|/run/user/1001|/run/user/$(id -u kiosk)|" /etc/systemd/system/kiosk.service
+
 sudo systemctl daemon-reload
 sudo systemctl enable kiosk.service
 ```
+
+**No autologin is needed — do not enable it.** The usual Pi kiosk recipe turns on
+console autologin in `raspi-config` and launches the browser from `.bash_profile`.
+This setup does not work that way: `PAMName=login` in the unit runs the service
+through the PAM login stack, so `pam_systemd` registers a real logind session on a
+seat, and that seat is what grants access to `/dev/dri` and `/dev/input`. The service
+*is* the login session, and it starts at boot whether or not anyone logs in.
+
+Turning on getty autologin as well would put a shell on tty1 fighting the kiosk for
+the same VT — the unit already stops `getty@tty1` via `Conflicts=` for exactly this
+reason.
 
 ### 6. Take the Pi off the network
 
@@ -234,8 +250,24 @@ curl -sI http://localhost/          # is nginx serving?
 curl -s http://localhost/2026 | head -5   # SPA fallback working?
 ```
 
+**Nothing happens at boot, and `systemctl status kiosk` says "inactive (dead)"** —
+the unit was never pulled in by the boot target. Check the two halves agree:
+
+```bash
+systemctl get-default                       # expect multi-user.target
+grep WantedBy /etc/systemd/system/kiosk.service   # expect multi-user.target
+systemctl is-enabled kiosk                  # expect enabled
+```
+
+A unit `WantedBy=graphical.target` on a system defaulting to `multi-user.target` will
+sit there forever without ever being started, and nothing logs an error.
+
 **Black screen, service restarting in a loop** — usually cage failing to get a seat.
 Confirm `PAMName=login` is present and `XDG_RUNTIME_DIR` matches `id -u kiosk`.
+
+**`Failed to open /dev/tty1: Device or resource busy`** — a getty still owns the VT.
+The unit's `Conflicts=getty@tty1.service` should handle it; if you enabled console
+autologin in `raspi-config`, turn it back off — this setup does not use it.
 
 **`chromium-browser: not found`** — the binary is `chromium` on some images. Update
 the `ExecStart` path in `kiosk.service`.
