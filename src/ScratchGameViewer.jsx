@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAssetUrl } from './offline/assets';
+import { useOnline } from './offline/useOnline';
 
 /**
  * Plays a Scratch project from a self-contained file we host ourselves, so it
@@ -8,6 +9,7 @@ import { useAssetUrl } from './offline/assets';
  */
 const ScratchGameViewer = ({ localPath, url, title, author, instructions, notes }) => {
   const { url: gameUrl } = useAssetUrl(localPath);
+  const { online } = useOnline();
   const cardRef = useRef(null);
   const [near, setNear] = useState(false);
 
@@ -41,22 +43,22 @@ const ScratchGameViewer = ({ localPath, url, title, author, instructions, notes 
       <div className="card-info">
         <div className="card-name">{title}</div>
         <div className="card-author">{author}</div>
-        {url && (
+        {url && online && (
           <a className="card-link" href={url} target="_blank" rel="noopener noreferrer">
             View on Scratch ↗
           </a>
         )}
         {instructions && (
-          <div className="card-note">
-            <span className="card-note-label">Instructions</span>
+          <details className="card-note">
+            <summary className="card-note-label">Instructions</summary>
             <p>{instructions}</p>
-          </div>
+          </details>
         )}
         {notes && (
-          <div className="card-note">
-            <span className="card-note-label">Notes and Credits</span>
+          <details className="card-note">
+            <summary className="card-note-label">Notes and Credits</summary>
             <p>{notes}</p>
-          </div>
+          </details>
         )}
       </div>
     </div>

@@ -50,6 +50,18 @@ const scratchGames = [
     author: 'Malcolm Beaton',
     localPath: '/games/gold-fish-game.html',
     url: 'https://scratch.mit.edu/projects/1276637435',
+    instructions: `Press the space bar to cast your fishing rod and catch fish.
+Right arow to go to shop
+Left arow to go to dock.
+Up arow to turn volume down to make it quieter.
+Use the Number buttons to explore the fishpedia and learn about the different fish you have caught. Every number corresponds to a different page. Start the fishpedia by pressing 2 and flip through the pages with number buttons 3 through 9.When you level up your bait it adds pages to the fish-pedia.
+
+Catch fish to earn points, and use your points to increase your bait level and catch different fish,
+or buy costumes to make you look cool.
+
+When you upgrade your bait level it will increase the type of fish available to you. Check for new pages to your fishapedia..`,
+    notes: `Graphics by me
+Original music by me (except for the "cha ching" I got that from a YouTubevideo from a YouTube channel called cashregestersound)`,
   },
 ];
 
