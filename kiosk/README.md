@@ -105,6 +105,39 @@ kiosk for the same VT; the unit stops `getty@tty1` via `Conflicts=` for that rea
 
 ---
 
+## Getting a terminal once the kiosk is running
+
+The kiosk owns tty1 and fills the screen, so the console is not where you left it.
+
+**`Ctrl+Alt+F2`** — switches to a second virtual terminal with a normal login prompt.
+The kiosk keeps running behind it; `Ctrl+Alt+F1` switches back. This is the quickest
+route when a keyboard is attached.
+
+**SSH** — worth setting up for a machine that lives in a cupboard. It is off by default
+on Raspberry Pi OS, so enable it once while you still have a keyboard:
+
+```bash
+sudo systemctl enable --now ssh
+hostname -I                       # note the address
+```
+
+Then from a laptop on the same network: `ssh pi@raspberrypi.local`. If you ran
+`--offline`, `sudo rfkill unblock wifi` first — though ethernet is unaffected by
+`rfkill` and works either way.
+
+**Stopping the kiosk entirely**, if you want the whole screen back:
+
+```bash
+sudo systemctl stop kiosk
+sudo systemctl start getty@tty1   # <- needed: see below
+```
+
+That second command is not optional. The unit has `Conflicts=getty@tty1.service`, so
+starting the kiosk stops tty1's login prompt, and stopping the kiosk does **not** bring
+it back. Skip it and tty1 is just dead and black. `sudo systemctl start kiosk` when done.
+
+---
+
 ## Updating the Pi when the website changes
 
 Nothing is automatic — the Pi is deliberately offline, so it never notices that the
@@ -193,7 +226,9 @@ Run in this order, and do not touch a keyboard after step 2.
 
 ## Troubleshooting
 
-Console access is **Ctrl+Alt+F2** — the kiosk holds tty1.
+Console access is **Ctrl+Alt+F2** — the kiosk holds tty1. See
+[Getting a terminal](#getting-a-terminal-once-the-kiosk-is-running) for SSH and for
+stopping the kiosk.
 
 ```bash
 journalctl -u kiosk -b -f            # follow this boot's kiosk log
