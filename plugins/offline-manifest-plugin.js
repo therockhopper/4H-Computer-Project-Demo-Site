@@ -19,7 +19,7 @@ import { join, posix, relative, sep } from 'node:path';
 
 // Assets matching these are runtime-cached + downloadable. Everything else in
 // public/ is small enough to precache, where Workbox handles its own revisioning.
-const HEAVY = /\.(stl|mp4|gif)$/i;
+const HEAVY = /\.(stl|gltf|bbmodel|mp4|gif)$/i;
 const HEAVY_DIRS = ['games'];
 
 const GROUP_LABELS = {

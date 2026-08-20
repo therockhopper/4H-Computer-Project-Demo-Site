@@ -39,7 +39,7 @@ registerRoute(
 registerRoute(
   ({ url, request }) =>
     url.origin === self.location.origin &&
-    (url.pathname.endsWith('.stl') || request.destination === 'video'),
+    (/\.(stl|gltf|bbmodel)$/i.test(url.pathname) || request.destination === 'video'),
   new CacheFirst({
     cacheName: MEDIA_CACHE,
     plugins: [

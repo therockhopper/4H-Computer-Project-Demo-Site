@@ -268,6 +268,32 @@ h1 em {
   padding: 0;
 }
 
+/* glTF viewer card body */
+.gltf-viewer-body {
+  height: 320px;
+  padding: 0;
+}
+
+.gltf-canvas-host {
+  width: 100%;
+  height: 100%;
+}
+
+/* Animation card body */
+.animation-body {
+  padding: 0;
+  background: var(--green-rich);
+  aspect-ratio: 16 / 9;
+}
+
+.animation-body video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 /* Card info (title + author below the content) */
 .card-info {
   padding: 1rem 1.125rem 1.125rem;
@@ -286,6 +312,28 @@ h1 em {
 .card-author {
   font-size: 0.8rem;
   color: var(--text-label);
+}
+
+.card-note {
+  margin-top: 0.625rem;
+}
+
+.card-note-label {
+  display: block;
+  font-size: 0.67rem;
+  font-weight: 700;
+  color: var(--green-mid);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 0.2rem;
+}
+
+.card-note p {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  white-space: pre-line;
 }
 
 /* Legacy card header/footer (used by 2024/2025basic pages) */

@@ -34,6 +34,7 @@ export default defineConfig({
         ],
         globIgnores: [
           '**/*.stl',   // 50MB — runtime + bulk download only
+          '**/*.{gltf,bbmodel}', // colored 3D models — same, runtime-cached via the manifest
           'games/**',   // packaged Scratch games, same
           '**/*.{gif,mp4}',
           // Must NEVER be precached — it is the reachability probe, and a cached

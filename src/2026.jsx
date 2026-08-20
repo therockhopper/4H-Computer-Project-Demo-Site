@@ -1,7 +1,9 @@
 import './App.css';
 
 import STLModelViewer from './STLModelViewer';
+import GLTFModelViewer from './GLTFModelViewer';
 import ScratchGameViewer from './ScratchGameViewer';
+import AnimationViewer from './AnimationViewer';
 import PythonProgramViewer from './PythonProgramViewer';
 import PdfDocumentViewer from './PdfDocumentViewer';
 import Navigation from './Navigation';
@@ -11,6 +13,13 @@ const models = [
     stlPath: '/2026/models/plant-pot.stl',
     title: '4H Plant Pot',
     description: 'David Mueller',
+  },
+  {
+    gltfPath: '/2026/models/castle/castel.gltf',
+    stlPath: '/2026/models/castle/castel.stl',
+    bbmodelPath: '/2026/models/castle/castel.bbmodel',
+    title: 'Castle',
+    description: 'Malcolm Beaton',
   },
 ];
 
@@ -35,6 +44,20 @@ const scratchGames = [
     author: 'David Mueller',
     localPath: '/games/bug-hunt.html',
     url: 'https://scratch.mit.edu/projects/1269295368',
+  },
+  {
+    title: 'Gold Fish Game',
+    author: 'Malcolm Beaton',
+    localPath: '/games/gold-fish-game.html',
+    url: 'https://scratch.mit.edu/projects/1276637435',
+  },
+];
+
+const animations = [
+  {
+    title: 'Ghosts Get Out',
+    author: 'Malcolm Beaton',
+    videoPath: '/2026/animations/Ghosts Get Out.mp4',
   },
 ];
 
@@ -93,14 +116,25 @@ function Project26() {
         </div>
         <div className="section-rule"></div>
         <div className="model-gallery">
-          {models.map((model, index) => (
-            <STLModelViewer
-              key={index}
-              stlPath={model.stlPath}
-              title={model.title}
-              description={model.description}
-            />
-          ))}
+          {models.map((model, index) =>
+            model.gltfPath ? (
+              <GLTFModelViewer
+                key={index}
+                gltfPath={model.gltfPath}
+                stlPath={model.stlPath}
+                bbmodelPath={model.bbmodelPath}
+                title={model.title}
+                description={model.description}
+              />
+            ) : (
+              <STLModelViewer
+                key={index}
+                stlPath={model.stlPath}
+                title={model.title}
+                description={model.description}
+              />
+            )
+          )}
         </div>
 
         <div className="section-head">
@@ -116,6 +150,24 @@ function Project26() {
               url={game.url}
               title={game.title}
               author={game.author}
+              instructions={game.instructions}
+              notes={game.notes}
+            />
+          ))}
+        </div>
+
+        <div className="section-head">
+          <h2 className="section-title">Animations</h2>
+          <span className="section-chip">Video</span>
+        </div>
+        <div className="section-rule"></div>
+        <div className="model-gallery">
+          {animations.map((animation, index) => (
+            <AnimationViewer
+              key={index}
+              videoPath={animation.videoPath}
+              title={animation.title}
+              author={animation.author}
             />
           ))}
         </div>

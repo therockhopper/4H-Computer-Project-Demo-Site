@@ -6,7 +6,7 @@ import { useAssetUrl } from './offline/assets';
  * works with no connection. `url` is kept as a link back to the original project
  * on Scratch — the packaged copy is a mirror, not a replacement.
  */
-const ScratchGameViewer = ({ localPath, url, title, author }) => {
+const ScratchGameViewer = ({ localPath, url, title, author, instructions, notes }) => {
   const { url: gameUrl } = useAssetUrl(localPath);
   const cardRef = useRef(null);
   const [near, setNear] = useState(false);
@@ -45,6 +45,18 @@ const ScratchGameViewer = ({ localPath, url, title, author }) => {
           <a className="card-link" href={url} target="_blank" rel="noopener noreferrer">
             View on Scratch ↗
           </a>
+        )}
+        {instructions && (
+          <div className="card-note">
+            <span className="card-note-label">Instructions</span>
+            <p>{instructions}</p>
+          </div>
+        )}
+        {notes && (
+          <div className="card-note">
+            <span className="card-note-label">Notes and Credits</span>
+            <p>{notes}</p>
+          </div>
         )}
       </div>
     </div>
