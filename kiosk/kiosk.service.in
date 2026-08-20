@@ -1,18 +1,14 @@
 # 4H Showcase display kiosk.
 #
-# Install to /etc/systemd/system/kiosk.service, then:
-#   sudo systemctl daemon-reload
-#   sudo systemctl enable kiosk.service
+# TEMPLATE — do not install this file directly. kiosk/install.sh substitutes
+# @CHROMIUM_BIN@, @CAGE_BIN@, @KIOSK_USER@, @KIOSK_UID@ and @WEBROOT@ with values
+# resolved on the machine, then writes the result to
+# /etc/systemd/system/kiosk.service.
 #
-# Check the Chromium binary name first — some Bookworm images ship it as
-# `chromium` rather than `chromium-browser`:
-#   command -v chromium-browser chromium
-#
-# XDG_RUNTIME_DIR below assumes the kiosk user is uid 1001. Step 5 of kiosk/README.md
-# rewrites it with sed to whatever `id -u kiosk` actually reports — if you install this
-# unit by hand instead, make that substitution yourself.
-#
-# This unit needs no getty autologin. See "No autologin is needed" in kiosk/README.md.
+# Hardcoding the Chromium path is what broke the first attempt at this: Raspberry Pi OS
+# ships the binary as `chromium` on some images and `chromium-browser` on others, and a
+# missing ExecStart binary fails with status=203/EXEC before anything renders — a black
+# screen restarting every two seconds with no obvious cause.
 
 [Unit]
 Description=4H Showcase Kiosk
@@ -25,33 +21,37 @@ Wants=nginx.service
 Conflicts=getty@tty1.service
 After=getty@tty1.service
 
+# Give up after 5 failures in 60s instead of restarting forever. A service that
+# cannot start is then visibly `failed` and leaves the VTs usable, rather than
+# holding the screen black in a restart loop with no way in.
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
 [Service]
-User=kiosk
+User=@KIOSK_USER@
 # PAMName=login runs the service through the PAM login stack, so pam_systemd
 # registers a real logind session on a seat. That seat is what grants access to
 # /dev/dri and /dev/input; without it cage cannot open the DRM device and exits
 # immediately. It is also why this kiosk needs no getty autologin — the service
-# *is* the login session.
+# *is* the login session, and it starts at boot with nobody present.
 PAMName=login
 TTYPath=/dev/tty1
 StandardInput=tty-fail
 StandardOutput=journal
 StandardError=journal
 UtmpIdentifier=tty1
-# pam_systemd sets this from the session, but cage is picky about it being present
-# in the environment at exec time. Setup rewrites the uid — see kiosk/README.md.
-Environment=XDG_RUNTIME_DIR=/run/user/1001
+Environment=XDG_RUNTIME_DIR=/run/user/@KIOSK_UID@
 
 # Wipe the browser profile each boot. Three jobs: clears whatever state a visitor
 # left, discards the "Chrome didn't shut down correctly — Restore?" bar that would
 # otherwise appear on the display every time the kiosk is unplugged rather than shut
 # down cleanly, and drops any service worker registered by an earlier build.
-ExecStartPre=/bin/rm -rf /home/kiosk/.chromium-kiosk
+ExecStartPre=/bin/rm -rf /home/@KIOSK_USER@/.chromium-kiosk
 
-ExecStart=/usr/bin/cage -d -- /usr/bin/chromium-browser \
+ExecStart=@CAGE_BIN@ -d -- @CHROMIUM_BIN@ \
     --ozone-platform=wayland \
     --kiosk \
-    --user-data-dir=/home/kiosk/.chromium-kiosk \
+    --user-data-dir=/home/@KIOSK_USER@/.chromium-kiosk \
     --noerrdialogs \
     --disable-infobars \
     --disable-session-crashed-bubble \
@@ -67,7 +67,7 @@ Restart=always
 RestartSec=2
 
 [Install]
-# multi-user.target, NOT graphical.target — setup sets the default target to
+# multi-user.target, NOT graphical.target — install.sh sets the default target to
 # multi-user (there is no display manager), so a unit wanted by graphical.target
 # would never be reached and the kiosk would simply never start.
 WantedBy=multi-user.target
