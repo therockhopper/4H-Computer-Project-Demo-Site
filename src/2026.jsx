@@ -27,7 +27,7 @@ function Project26() {
       <header>
         <div className="year-badge">Port Hood Island View · 2026</div>
         <h1>4H Computer Project <em>Showcase</em></h1>
-        <p className="header-sub">Celebrating the creativity and technical skills of our 4&#8209;H club members.</p>
+        <p className="header-sub">Celebrating the creativity and technical skills of our 4&#8209;H club members</p>
         <Navigation currentPage="2026" />
       </header>
 
