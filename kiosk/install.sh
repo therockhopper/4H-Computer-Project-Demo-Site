@@ -7,6 +7,8 @@
 #
 # Idempotent: safe to re-run after a failure or a config change.
 #
+#     --update       content update only: build, deploy, restart. Skips packages,
+#                    user, nginx and unit setup. Use this after `git pull`.
 #     --no-build     use an existing dist/ instead of building (for a dist/ built
 #                    on a laptop and copied across; skips installing Node)
 #     --offline      disable wifi and bluetooth at the end, for show configuration
@@ -29,6 +31,7 @@ NODE_MAJOR=20
 DO_BUILD=1
 DO_OFFLINE=0
 DO_UNINSTALL=0
+DO_UPDATE=0
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -48,6 +51,7 @@ usage() { sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0; }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --update)    DO_UPDATE=1 ;;
     --no-build)  DO_BUILD=0 ;;
     --offline)   DO_OFFLINE=1 ;;
     --uninstall) DO_UNINSTALL=1 ;;
@@ -59,6 +63,75 @@ done
 
 [[ $EUID -eq 0 ]] || die "run with sudo: sudo $0 $*"
 command -v systemctl >/dev/null || die "this needs systemd"
+
+# ── shared steps ────────────────────────────────────────────────────────────
+# Used by both the full install and the --update fast path.
+
+build_site() {
+  if [[ $DO_BUILD -eq 0 ]]; then
+    step "Skipping build (--no-build)"
+    return
+  fi
+  step "Building the site"
+
+  local need_node=1 cur
+  if command -v node >/dev/null; then
+    cur="$(node -p 'process.versions.node.split(".")[0]')"
+    [[ "$cur" -ge 18 ]] && { need_node=0; ok "node $(node -v) is new enough"; }
+  fi
+  if [[ $need_node -eq 1 ]]; then
+    ok "installing Node $NODE_MAJOR"
+    curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash - >/dev/null 2>&1
+    apt-get install -y -qq nodejs >/dev/null
+    ok "node $(node -v)"
+  fi
+
+  cd "$REPO_ROOT"
+  # -H so npm's cache lands in that user's home rather than root's. Output is left
+  # visible on purpose: a silent failure here is one of the hardest things to debug
+  # over a slow SSH link to a Pi in a cupboard.
+  local run_as="${SUDO_USER:-root}"
+  if [[ "$run_as" != "root" ]]; then
+    sudo -u "$run_as" -H npm ci --no-fund --no-audit || die "npm ci failed (see output above)"
+    sudo -u "$run_as" -H npm run build || die "build failed (see output above)"
+  else
+    npm ci --no-fund --no-audit || die "npm ci failed (see output above)"
+    npm run build || die "build failed (see output above)"
+  fi
+  ok "built $(du -sh "$REPO_ROOT/dist" | cut -f1) into dist/"
+}
+
+deploy_site() {
+  [[ -f "$REPO_ROOT/dist/index.html" ]] ||
+    die "no dist/index.html — build first, or copy a laptop-built dist/ here"
+
+  step "Deploying to $WEBROOT"
+  mkdir -p "$WEBROOT"
+  if command -v rsync >/dev/null; then
+    rsync -a --delete "$REPO_ROOT/dist/" "$WEBROOT/"
+  else
+    rm -rf "${WEBROOT:?}/"* && cp -a "$REPO_ROOT/dist/." "$WEBROOT/"
+  fi
+  chown -R root:www-data "$WEBROOT"
+  find "$WEBROOT" -type d -exec chmod 755 {} +
+  find "$WEBROOT" -type f -exec chmod 644 {} +
+  ok "$(find "$WEBROOT" -type f | wc -l | tr -d ' ') files, $(du -sh "$WEBROOT" | cut -f1)"
+}
+
+verify_serving() {
+  sleep 1
+  curl -sf -o /dev/null http://localhost/ || die "nginx is not serving / — check: systemctl status nginx"
+  ok "GET / → 200"
+
+  # The SPA-fallback case that a directory in public/ silently breaks. If this returns
+  # 403 the try_files rule is wrong and deep links would fail at the show.
+  local code
+  code="$(curl -s -o /dev/null -w '%{http_code}' http://localhost/2026)"
+  [[ "$code" == "200" ]] || die "GET /2026 → $code (expected 200). SPA fallback is broken."
+  curl -s http://localhost/2026 | grep -q '<div id="root">' ||
+    die "GET /2026 did not return the app shell"
+  ok "GET /2026 → 200, app shell served"
+}
 
 # ── uninstall ───────────────────────────────────────────────────────────────
 if [[ $DO_UNINSTALL -eq 1 ]]; then
@@ -75,6 +148,31 @@ if [[ $DO_UNINSTALL -eq 1 ]]; then
   ok "kiosk service and nginx site removed"
   warn "the '$KIOSK_USER' user and $WEBROOT were left in place — remove by hand if you want them gone"
   echo; echo "Reboot to get the normal desktop back."
+  exit 0
+fi
+
+# ── update fast path ────────────────────────────────────────────────────────
+# Content-only update: the machine is already configured, so packages, user, nginx
+# and the unit are all left alone. Just rebuild, redeploy and restart.
+if [[ $DO_UPDATE -eq 1 ]]; then
+  [[ -f "$REPO_ROOT/package.json" ]] || die "no package.json at $REPO_ROOT — run this from the repo"
+  [[ -f "$UNIT" ]] || die "kiosk is not installed yet — run without --update first"
+
+  build_site
+  deploy_site
+
+  step "Restarting"
+  systemctl restart nginx
+  verify_serving
+  # The restart also wipes the browser profile, which drops any HTTP-cached copy of
+  # index.html along with it.
+  systemctl restart kiosk.service
+  sleep 5
+  systemctl is-active --quiet kiosk.service ||
+    { journalctl -u kiosk -n 20 --no-pager; die "kiosk did not come back after restart"; }
+  ok "kiosk restarted and running"
+
+  echo; echo "Updated. The display should be showing the new build."; echo
   exit 0
 fi
 
@@ -130,57 +228,9 @@ usermod -aG video,input,render,tty "$KIOSK_USER"
 KIOSK_UID="$(id -u "$KIOSK_USER")"
 ok "uid $KIOSK_UID, groups: $(id -Gn "$KIOSK_USER" | tr ' ' ',')"
 
-# ── build ───────────────────────────────────────────────────────────────────
-if [[ $DO_BUILD -eq 1 ]]; then
-  step "Building the site"
-
-  NEED_NODE=1
-  if command -v node >/dev/null; then
-    CUR="$(node -p 'process.versions.node.split(".")[0]')"
-    [[ "$CUR" -ge 18 ]] && { NEED_NODE=0; ok "node $(node -v) is new enough"; }
-  fi
-
-  if [[ $NEED_NODE -eq 1 ]]; then
-    ok "installing Node $NODE_MAJOR"
-    curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash - >/dev/null 2>&1
-    apt-get install -y -qq nodejs >/dev/null
-    ok "node $(node -v)"
-  fi
-
-  cd "$REPO_ROOT"
-  # npm must not run as root here or node_modules ends up root-owned in a user's
-  # checkout. Drop to the invoking user when there is one.
-  # -H so npm's cache lands in that user's home rather than root's. Output is left
-  # visible on purpose: a silent failure here is one of the hardest things to debug
-  # over a slow SSH link to a Pi in a cupboard.
-  RUN_AS="${SUDO_USER:-root}"
-  if [[ "$RUN_AS" != "root" ]]; then
-    sudo -u "$RUN_AS" -H npm ci --no-fund --no-audit || die "npm ci failed (see output above)"
-    sudo -u "$RUN_AS" -H npm run build || die "build failed (see output above)"
-  else
-    npm ci --no-fund --no-audit || die "npm ci failed (see output above)"
-    npm run build || die "build failed (see output above)"
-  fi
-  ok "built $(du -sh "$REPO_ROOT/dist" | cut -f1) into dist/"
-else
-  step "Skipping build (--no-build)"
-fi
-
-[[ -f "$REPO_ROOT/dist/index.html" ]] ||
-  die "no dist/index.html — build first, or copy a laptop-built dist/ here"
-
-# ── deploy ──────────────────────────────────────────────────────────────────
-step "Deploying to $WEBROOT"
-mkdir -p "$WEBROOT"
-if command -v rsync >/dev/null; then
-  rsync -a --delete "$REPO_ROOT/dist/" "$WEBROOT/"
-else
-  rm -rf "${WEBROOT:?}/"* && cp -a "$REPO_ROOT/dist/." "$WEBROOT/"
-fi
-chown -R root:www-data "$WEBROOT"
-find "$WEBROOT" -type d -exec chmod 755 {} +
-find "$WEBROOT" -type f -exec chmod 644 {} +
-ok "$(find "$WEBROOT" -type f | wc -l) files, $(du -sh "$WEBROOT" | cut -f1)"
+# ── build and deploy ────────────────────────────────────────────────────────
+build_site
+deploy_site
 
 # ── nginx ───────────────────────────────────────────────────────────────────
 step "Configuring nginx"
@@ -192,17 +242,7 @@ systemctl enable nginx >/dev/null 2>&1
 systemctl restart nginx
 ok "nginx restarted"
 
-sleep 1
-curl -sf -o /dev/null http://localhost/ || die "nginx is not serving / — check: systemctl status nginx"
-ok "GET / → 200"
-
-# The SPA-fallback case that a directory in public/ silently breaks. If this returns
-# 403 the try_files rule is wrong and deep links would fail at the show.
-ROUTE_CODE="$(curl -s -o /dev/null -w '%{http_code}' http://localhost/2026)"
-[[ "$ROUTE_CODE" == "200" ]] || die "GET /2026 → $ROUTE_CODE (expected 200). SPA fallback is broken."
-curl -s http://localhost/2026 | grep -q '<div id="root">' ||
-  die "GET /2026 did not return the app shell"
-ok "GET /2026 → 200, app shell served"
+verify_serving
 
 # ── systemd unit ────────────────────────────────────────────────────────────
 step "Installing the kiosk service"

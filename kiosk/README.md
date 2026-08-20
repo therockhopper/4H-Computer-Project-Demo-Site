@@ -105,20 +105,53 @@ kiosk for the same VT; the unit stops `getty@tty1` via `Conflicts=` for that rea
 
 ---
 
-## Updating content
+## Updating the Pi when the website changes
 
-The Pi needs a network for this — `sudo rfkill unblock wifi`, and block it again after.
+Nothing is automatic — the Pi is deliberately offline, so it never notices that the
+repo moved. You pull the new code and rebuild, which is three commands:
 
 ```bash
-cd ~/4h && git pull && sudo ./kiosk/install.sh
+sudo rfkill unblock wifi          # the Pi needs a network for this
+cd ~/4h
+git pull
+sudo ./kiosk/install.sh --update
+sudo rfkill block wifi            # put it back
 ```
 
-Re-running the installer rebuilds, redeploys and restarts. If you built on a laptop
-instead, copy `dist/` into `~/4h/dist/` and run `sudo ./kiosk/install.sh --no-build`.
+`--update` is the fast path: it builds, deploys to `/var/www/4h`, re-verifies that
+nginx is serving, and restarts the kiosk. It skips package installs, user setup, the
+nginx site and the systemd unit, because those have not changed. Takes about a minute
+on a Pi 4.
 
-If the overlay filesystem is enabled, turn it off and reboot before updating, then turn
-it back on and reboot after — otherwise changes live in RAM and vanish at the next
-power cut.
+The display goes black for a second or two during the restart, then comes back on the
+new build. No reboot needed.
+
+**Building on a laptop instead?** Copy the built `dist/` into `~/4h/dist/` on the Pi
+and run `sudo ./kiosk/install.sh --update --no-build`.
+
+**If a dependency changed** (anything in `package.json`), `--update` handles it —
+`npm ci` runs as part of the build.
+
+**If `kiosk/` itself changed** — the service file, the nginx config, or the installer —
+run the full `sudo ./kiosk/install.sh` instead. `--update` deliberately does not touch
+those.
+
+**Shallow clone note.** The Pi is cloned with `--depth 1`, and `git pull` works fine on
+that. But if the branch was force-pushed, `git pull` will refuse; the fix is to re-clone
+rather than fight it.
+
+**Read-only root.** If you enabled the overlay filesystem, turn it off and reboot
+*before* updating, then turn it back on and reboot after. Otherwise the update lives in
+RAM and vanishes at the next power cut — the kiosk silently reverts to the old build.
+
+### Why the display doesn't serve a stale page
+
+`index.html` is the only unfingerprinted file, and it names all the fingerprinted ones,
+so a cached copy would pin the kiosk to the previous build no matter what you deploy.
+Two things prevent that: nginx sends `Cache-Control: no-store` for `index.html` and
+`offline-manifest.json`, and the service wipes the browser profile on every start, which
+drops the HTTP cache with it. The service worker is not registered in kiosk mode, so
+there is no third cache layer to go stale.
 
 ---
 
