@@ -20,7 +20,9 @@ export default defineConfig({
 
       injectManifest: {
         globPatterns: [
-          '**/*.{js,css,html,woff2}',
+          // .mjs matters: PDF.js ships its worker as an ES module, and without it
+          // precached the resume card cannot render offline.
+          '**/*.{js,mjs,css,html,woff2}',
           'images/favicon.ico',
           // Source for the runnable Python cards — fetched at runtime, tiny,
           // and the cards are blank offline without them.

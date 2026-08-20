@@ -605,6 +605,73 @@ h1 em {
 }
 
 /* ──────────────────────────────────────
+   3D model controls — reset + full screen
+   ────────────────────────────────────── */
+.model-controls {
+  position: absolute;
+  top: 0.625rem;
+  right: 0.625rem;
+  display: flex;
+  gap: 0.35rem;
+  z-index: 2;
+}
+
+.model-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--green-mid);
+  cursor: pointer;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.07);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.model-control:hover {
+  background: white;
+  color: var(--green-rich);
+}
+
+/* A transformed ancestor becomes the containing block for position:fixed, so
+   the card's hover lift would trap the expanded viewer inside the card instead
+   of letting it cover the viewport. Both rules are needed — the pointer is
+   still over the card right after the button is clicked. */
+.model-card-expanded,
+.model-card-expanded:hover {
+  transform: none;
+}
+
+/* Expanded: pinned to the viewport rather than handed to the Fullscreen API,
+   which iOS Safari does not offer for anything but <video>. Uses dvh so a
+   phone's collapsing address bar cannot crop the model. */
+.stl-expanded {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  width: 100vw;
+  height: 100dvh;
+  border-radius: 0;
+}
+
+/* Bigger targets while expanded — the exit button is the only way back out on
+   a kiosk with no keyboard, so it must be unmissable. */
+.stl-expanded .model-controls {
+  top: 1rem;
+  right: 1rem;
+  gap: 0.5rem;
+}
+
+.stl-expanded .model-control {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+/* ──────────────────────────────────────
    PDF Document — embedded browser viewer
    ────────────────────────────────────── */
 .pdf-body {
@@ -618,22 +685,34 @@ h1 em {
   aspect-ratio: 8.5 / 11;
 }
 
-.pdf-frame iframe {
+/* The rendered pages scroll inside the card, so a document of any length fits
+   without the card growing. */
+.pdf-pages {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  border: 0;
+  overflow-y: auto;
   background: white;
 }
 
+.pdf-page {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .pdf-placeholder {
+  position: absolute;
+  inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
-  color: rgba(255, 255, 255, 0.6);
+  gap: 0.6rem;
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  background: var(--green-rich);
 }
 
 /* ──────────────────────────────────────
