@@ -145,6 +145,53 @@ Turning on getty autologin as well would put a shell on tty1 fighting the kiosk 
 the same VT — the unit already stops `getty@tty1` via `Conflicts=` for exactly this
 reason.
 
+**This survives power cycling.** That is worth stating plainly, because "no login" and
+"comes back after the plug is pulled" sound like they are in tension. They are not: a
+systemd *system* service is not attached to a human session. Power up runs
+`multi-user.target`, which pulls in `kiosk.service`, which creates its own session.
+Nobody has to be there. `Restart=always` then covers crashes on top of that.
+
+Confirm it for yourself with verification steps 2 and 11 below — reboot, and pull the
+cord mid-render.
+
+### Fallback: the autologin route
+
+Use this **only if** `kiosk.service` will not start on your image — most likely
+`pam_systemd` not granting a seat, which shows up as cage exiting immediately with a
+DRM or "no seat" error in `journalctl -u kiosk`. It is the approach most Pi kiosk
+guides use, so it is well-trodden.
+
+**Do not run both.** They contend for tty1.
+
+```bash
+sudo systemctl disable --now kiosk.service
+
+# System Options → Boot / Auto Login → Console Autologin, as the kiosk user
+sudo raspi-config
+```
+
+Then in that user's `~/.bash_profile`:
+
+```bash
+if [ -z "$WAYLAND_DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ]; then
+  rm -rf ~/.chromium-kiosk
+  exec cage -d -- chromium-browser \
+    --ozone-platform=wayland --kiosk \
+    --user-data-dir="$HOME/.chromium-kiosk" \
+    --noerrdialogs --disable-infobars --disable-session-crashed-bubble \
+    --check-for-update-interval=31536000 \
+    --autoplay-policy=no-user-gesture-required \
+    --overscroll-history-navigation=0 --disable-pinch \
+    --password-store=basic \
+    'http://localhost/?kiosk=1'
+fi
+```
+
+`exec` replaces the shell, so when cage exits agetty respawns, autologin fires again
+and the kiosk relaunches — the same self-healing the systemd unit gets from
+`Restart=always`. What you lose is `journalctl -u kiosk` for logs and
+`systemctl restart kiosk` for control.
+
 ### 6. Take the Pi off the network
 
 The requirement is never-connected, so make it structural rather than a setting
