@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAssetUrl } from './offline/assets';
 
-const AnimationViewer = ({ videoPath, title, author }) => {
+const AnimationViewer = ({ videoPath, title, author, description }) => {
   const { url } = useAssetUrl(videoPath);
   const cardRef = useRef(null);
   const [near, setNear] = useState(false);
@@ -39,6 +39,12 @@ const AnimationViewer = ({ videoPath, title, author }) => {
       <div className="card-info">
         <div className="card-name">{title}</div>
         <div className="card-author">{author}</div>
+        {description && (
+          <details className="card-note">
+            <summary className="card-note-label">Description</summary>
+            <p>{description}</p>
+          </details>
+        )}
       </div>
     </div>
   );

@@ -63,6 +63,49 @@ When you upgrade your bait level it will increase the type of fish available to 
     notes: `Graphics by me
 Original music by me (except for the "cha ching" I got that from a YouTubevideo from a YouTube channel called cashregestersound)`,
   },
+  {
+    title: 'Obby but your a burger',
+    author: 'Sterling Morrison',
+    localPath: '/games/obby-but-your-a-burger.html',
+    url: 'https://scratch.mit.edu/projects/1364523722',
+    instructions: `YOU have to go an an epic adventure for your friends cheese (he dropped it somewhere) its a game of emotion, (no not really) and always make the right choice! Also controls are listed below
+┃
+/
+
+ASWD or arrow keys to move
+Space to jump
+Jump twice (fast) to double jump
+Don't fumble
+Shotgun when its present: Click to (needs to reloads once ammo at zero)`,
+    notes: `Made by me myself
+tested by @monkey123443210
+Most of the sounds and music are from Pixabay Free Sounds. And also, Don't play if your epileptic
+Full screen and mouse recommended for best experience`,
+  },
+  {
+    title: 'whisle.rlbx',
+    author: 'Sterling Morrison',
+    localPath: '/games/whisle-rlbx.html',
+    url: 'https://scratch.mit.edu/projects/1197729531',
+    instructions: `play in full screen it makes it neater and just better
+w a s d or arrow keys to move,
+E for burger - heals 25 HP
+Q for sword - 35 damage to Flowers
+R is for Bomb - 50 damage to Flowers, or 35 dm to you
+there are warnings for a reason
+btw the cooldowns for your items are on the right side corner...yah
+
+
+
+
+
+
+
+
+hear the whistle?
+cover the ears!`,
+    notes: `i made this for fun, once again since i have way too much free time. uhh credits at the end cuz im too lazy to import them here at least right now.`,
+  },
 ];
 
 const animations = [
@@ -70,6 +113,11 @@ const animations = [
     title: 'Ghosts Get Out',
     author: 'Malcolm Beaton',
     videoPath: '/2026/animations/Ghosts Get Out.mp4',
+  },
+  {
+    title: 'Cat Makes: Season 2',
+    author: 'Sterling Morrison',
+    videoPath: '/2026/animations/Cat makes_ season 2.mp4',
   },
 ];
 
@@ -180,6 +228,7 @@ function Project26() {
               videoPath={animation.videoPath}
               title={animation.title}
               author={animation.author}
+              description={animation.description}
             />
           ))}
         </div>
