@@ -21,6 +21,16 @@ const models = [
     title: 'Castle',
     description: 'Malcolm Beaton',
   },
+  {
+    gltfPath: '/2026/models/4h-lantern.gltf',
+    title: '4H Lantern',
+    description: 'Peter Hershey',
+  },
+  {
+    gltfPath: '/2026/models/4h-teapot.gltf',
+    title: '4H Teapot',
+    description: 'Peter Hershey',
+  },
 ];
 
 const scratchGames = [
@@ -105,6 +115,11 @@ btw the cooldowns for your items are on the right side corner...yah
 hear the whistle?
 cover the ears!`,
     notes: `i made this for fun, once again since i have way too much free time. uhh credits at the end cuz im too lazy to import them here at least right now.`,
+  },
+  {
+    title: 'Cat Coin Miner',
+    author: 'Peter Hershey',
+    localPath: '/games/cat-coin-miner.html',
   },
 ];
 
