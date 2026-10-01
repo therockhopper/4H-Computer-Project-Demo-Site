@@ -20,7 +20,6 @@ function Project26ProShow() {
       <div className="page-wrap">
         <div className="section-head">
           <h2 className="section-title">Animation</h2>
-          <span className="section-chip">Pro Show</span>
         </div>
         <div className="section-rule"></div>
         <div className="pro-show-feature">
