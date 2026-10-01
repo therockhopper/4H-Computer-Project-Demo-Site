@@ -207,6 +207,12 @@ h1 em {
   margin: 0 0 1.5rem;
 }
 
+/* Single featured card on the pro show page — full width instead of one grid column. */
+.pro-show-feature {
+  max-width: 960px;
+  margin: 0 auto 1.5rem;
+}
+
 .poster-gallery {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
